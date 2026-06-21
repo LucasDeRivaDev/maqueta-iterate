@@ -43,6 +43,19 @@ export const ESPECIES_CONFIG = {
 export const GESTACION_DIAS = { wistar: 23, balbc: 21, c57: 20 }
 export const DESTETE_DIAS   = 21
 
+export const TIPOS_MOVIMIENTO = {
+  ingreso_produccion: { label: 'Ingreso desde Producción', color: '#00e676', signo: '+' },
+  ingreso_manual:     { label: 'Ingreso manual',           color: '#40c4ff', signo: '+' },
+  entrega:            { label: 'Entrega',                  color: '#ffb300', signo: '-' },
+  venta:              { label: 'Venta',                    color: '#ffb300', signo: '-' },
+  donacion:           { label: 'Donación',                 color: '#ce93d8', signo: '-' },
+  transferencia:      { label: 'Transferencia',            color: '#8a9bb0', signo: '↔' },
+  baja_muerte:        { label: 'Muerte',                   color: '#ff3d57', signo: '-' },
+  baja_sacrificio:    { label: 'Sacrificio',               color: '#ff3d57', signo: '-' },
+  baja_sanitaria:     { label: 'Baja sanitaria',           color: '#ff3d57', signo: '-' },
+  correccion:         { label: 'Corrección de inventario', color: '#8a9bb0', signo: '±' },
+}
+
 // ── Datos de demostración ────────────────────────────────────────────────────
 const DATOS_INICIALES = {
   wistar: {
@@ -130,6 +143,19 @@ const DATOS_INICIALES = {
         },
       ],
     },
+
+    // ── Stock ──────────────────────────────────────────────────────────────
+    stock: {
+      jaulas: [
+        { id: 'JAU-S-W-001', codigo: 'JAU-S-W-001', cepa: 'Wistar', sexo: 'macho',  cantidadActual: 1, fechaIngreso: '2026-06-11', fechaNacimiento: '2026-05-21', origenId: 'CAM-P-W-001', origenTipo: 'produccion', observaciones: '', estado: 'activo' },
+        { id: 'JAU-S-W-002', codigo: 'JAU-S-W-002', cepa: 'Wistar', sexo: 'hembra', cantidadActual: 3, fechaIngreso: '2026-06-11', fechaNacimiento: '2026-05-21', origenId: 'CAM-P-W-001', origenTipo: 'produccion', observaciones: '', estado: 'activo' },
+      ],
+      movimientos: [
+        { id: 'MOV-W-001', tipo: 'ingreso_produccion', fecha: '2026-06-11', cantidad: 3, sexo: 'macho',  cepa: 'Wistar', jaulaId: 'JAU-S-W-001', investigador: '', proyecto: '', motivo: 'Ingreso desde Producción — CAM-P-W-001', observaciones: '' },
+        { id: 'MOV-W-002', tipo: 'ingreso_produccion', fecha: '2026-06-11', cantidad: 3, sexo: 'hembra', cepa: 'Wistar', jaulaId: 'JAU-S-W-002', investigador: '', proyecto: '', motivo: 'Ingreso desde Producción — CAM-P-W-001', observaciones: '' },
+        { id: 'MOV-W-003', tipo: 'entrega',            fecha: '2026-06-15', cantidad: 2, sexo: 'macho',  cepa: 'Wistar', jaulaId: 'JAU-S-W-001', investigador: 'Dra. García',    proyecto: 'Protocolo EXP-2026-04 — Metabolismo lipídico', motivo: '', observaciones: 'Entrega urgente para experimento en curso.' },
+      ],
+    },
   },
 
   balbc: {
@@ -169,6 +195,7 @@ const DATOS_INICIALES = {
       ],
       camadas: [],
     },
+    stock: { jaulas: [], movimientos: [] },
   },
 
   c57: {
@@ -203,6 +230,7 @@ const DATOS_INICIALES = {
       ],
       camadas: [],
     },
+    stock: { jaulas: [], movimientos: [] },
   },
 }
 
@@ -249,13 +277,74 @@ function reducer(state, action) {
         camadas: state[sp].produccion.camadas.map(c => c.id === action.camadaId ? { ...c, destete: action.destete } : c)
       }}}
 
-    case 'REGISTRAR_SELECCION_PROD':
-      return { ...state, [sp]: { ...state[sp], produccion: { ...state[sp].produccion,
-        camadas: state[sp].produccion.camadas.map(c => c.id === action.camadaId
-          ? { ...c, seleccion: action.seleccion, stock: action.stock }
-          : c
-        )
+    case 'REGISTRAR_SELECCION_PROD': {
+      const espData = state[sp]
+      const camada  = espData.produccion.camadas.find(c => c.id === action.camadaId)
+      const cepa    = espData.produccion.jaulas.find(j => j.id === camada?.jaulaId)?.cepa ?? sp
+      const { stock } = action
+      const ts = Date.now()
+      const nuevasJaulas = []
+      const nuevosMovs   = []
+      if (stock.machos > 0) {
+        const jId = `JAU-S-${sp.slice(0,1).toUpperCase()}-${ts}M`
+        nuevasJaulas.push({ id: jId, codigo: jId, cepa, sexo: 'macho', cantidadActual: stock.machos, fechaIngreso: stock.fechaIngreso, fechaNacimiento: camada?.fechaNacimiento ?? stock.fechaIngreso, origenId: action.camadaId, origenTipo: 'produccion', observaciones: '', estado: 'activo' })
+        nuevosMovs.push({ id: `MOV-${ts}M`, tipo: 'ingreso_produccion', fecha: stock.fechaIngreso, cantidad: stock.machos, sexo: 'macho', cepa, jaulaId: jId, investigador: '', proyecto: '', motivo: `Ingreso desde Producción — ${action.camadaId}`, observaciones: '' })
+      }
+      if (stock.hembras > 0) {
+        const jId = `JAU-S-${sp.slice(0,1).toUpperCase()}-${ts}H`
+        nuevasJaulas.push({ id: jId, codigo: jId, cepa, sexo: 'hembra', cantidadActual: stock.hembras, fechaIngreso: stock.fechaIngreso, fechaNacimiento: camada?.fechaNacimiento ?? stock.fechaIngreso, origenId: action.camadaId, origenTipo: 'produccion', observaciones: '', estado: 'activo' })
+        nuevosMovs.push({ id: `MOV-${ts}H`, tipo: 'ingreso_produccion', fecha: stock.fechaIngreso, cantidad: stock.hembras, sexo: 'hembra', cepa, jaulaId: jId, investigador: '', proyecto: '', motivo: `Ingreso desde Producción — ${action.camadaId}`, observaciones: '' })
+      }
+      return { ...state, [sp]: {
+        ...espData,
+        produccion: { ...espData.produccion,
+          camadas: espData.produccion.camadas.map(c => c.id === action.camadaId ? { ...c, seleccion: action.seleccion, stock: action.stock } : c)
+        },
+        stock: {
+          ...espData.stock,
+          jaulas:      [...espData.stock.jaulas,      ...nuevasJaulas],
+          movimientos: [...espData.stock.movimientos, ...nuevosMovs],
+        },
+      }}
+    }
+
+    // Stock
+    case 'CREAR_JAULA_STOCK': {
+      const espData = state[sp]
+      return { ...state, [sp]: { ...espData, stock: {
+        ...espData.stock,
+        jaulas:      [...espData.stock.jaulas, action.jaula],
+        movimientos: [...espData.stock.movimientos, action.movimiento],
       }}}
+    }
+
+    case 'MOVIMIENTO_STOCK': {
+      const espData = state[sp]
+      const { movimiento, jaulaId, delta } = action
+      return { ...state, [sp]: { ...espData, stock: {
+        ...espData.stock,
+        jaulas: espData.stock.jaulas.map(j => {
+          if (j.id !== jaulaId) return j
+          const nueva = Math.max(0, j.cantidadActual + delta)
+          return { ...j, cantidadActual: nueva, estado: nueva <= 0 ? 'vacia' : 'activo' }
+        }),
+        movimientos: [...espData.stock.movimientos, movimiento],
+      }}}
+    }
+
+    case 'TRANSFERENCIA_STOCK': {
+      const espData = state[sp]
+      const { movDesde, movHacia, desdeId, hastaId, cantidad } = action
+      return { ...state, [sp]: { ...espData, stock: {
+        ...espData.stock,
+        jaulas: espData.stock.jaulas.map(j => {
+          if (j.id === desdeId) { const n = Math.max(0, j.cantidadActual - cantidad); return { ...j, cantidadActual: n, estado: n <= 0 ? 'vacia' : 'activo' } }
+          if (j.id === hastaId) return { ...j, cantidadActual: j.cantidadActual + cantidad }
+          return j
+        }),
+        movimientos: [...espData.stock.movimientos, movDesde, movHacia],
+      }}}
+    }
 
     default: return state
   }
@@ -278,6 +367,11 @@ export function ICIVETProvider({ children }) {
   function registrarDesteeProd(especieId, camadaId, destete)                   { dispatch({ type: 'REGISTRAR_DESTETE_PROD', especieId, camadaId, destete }) }
   function registrarSeleccionProd(especieId, camadaId, seleccion, stock)       { dispatch({ type: 'REGISTRAR_SELECCION_PROD', especieId, camadaId, seleccion, stock }) }
 
+  // Stock
+  function crearJaulaStock(especieId, jaula, movimiento)                                           { dispatch({ type: 'CREAR_JAULA_STOCK',    especieId, jaula, movimiento }) }
+  function registrarMovimientoStock(especieId, movimiento, jaulaId, delta)                         { dispatch({ type: 'MOVIMIENTO_STOCK',      especieId, movimiento, jaulaId, delta }) }
+  function registrarTransferenciaStock(especieId, movDesde, movHacia, desdeId, hastaId, cantidad)  { dispatch({ type: 'TRANSFERENCIA_STOCK',   especieId, movDesde, movHacia, desdeId, hastaId, cantidad }) }
+
   function getDatosEspecie(especieId) { return datos[especieId] ?? null }
 
   return (
@@ -286,6 +380,7 @@ export function ICIVETProvider({ children }) {
       setDestinoAnimal, registrarDestete,
       crearJaula, editarEstadoJaula,
       registrarNacimientoProd, registrarDesteeProd, registrarSeleccionProd,
+      crearJaulaStock, registrarMovimientoStock, registrarTransferenciaStock,
     }}>
       {children}
     </ICIVETContext.Provider>

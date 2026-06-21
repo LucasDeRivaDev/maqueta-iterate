@@ -11,7 +11,7 @@ import logoNavLight from '../assets/logoiteratefondoclaro.png'
 const TABS = [
   { id: 'fundacion', label: 'Fundación', activo: true },
   { id: 'produccion', label: 'Producción', activo: true },
-  { id: 'stock', label: 'Stock', activo: false },
+  { id: 'stock', label: 'Stock', activo: true },
 ]
 
 export default function EspecieLayout() {
