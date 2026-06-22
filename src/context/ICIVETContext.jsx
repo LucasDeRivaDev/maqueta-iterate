@@ -157,6 +157,7 @@ const DATOS_INICIALES = {
       ],
     },
     historialEventos: [],
+    actividadesColonia: { fundacion: [], produccion: [], stock: [] },
   },
 
   balbc: {
@@ -198,6 +199,7 @@ const DATOS_INICIALES = {
     },
     stock: { jaulas: [], movimientos: [] },
     historialEventos: [],
+    actividadesColonia: { fundacion: [], produccion: [], stock: [] },
   },
 
   c57: {
@@ -234,6 +236,7 @@ const DATOS_INICIALES = {
     },
     stock: { jaulas: [], movimientos: [] },
     historialEventos: [],
+    actividadesColonia: { fundacion: [], produccion: [], stock: [] },
   },
 }
 
@@ -357,6 +360,43 @@ function reducer(state, action) {
       }}
     }
 
+    case 'TRANSFERIR_ANIMAL': {
+      const espData = state[sp]
+      const { animalId, coloniaOrigen, coloniaDestino, nuevaColoniaKey, fecha, responsable, observaciones } = action
+      return { ...state, [sp]: {
+        ...espData,
+        animales: espData.animales.map(a =>
+          a.id === animalId ? { ...a, destino: nuevaColoniaKey } : a
+        ),
+        historialEventos: [...(espData.historialEventos ?? []), {
+          id: `TRANS-${Date.now()}`,
+          animalId,
+          fecha,
+          tipo: 'transferencia_colonia',
+          coloniaOrigen,
+          coloniaDestino,
+          descripcion: `Transferido de ${coloniaOrigen} a ${coloniaDestino}.${observaciones ? ' ' + observaciones : ''}`,
+          usuario: responsable || 'Sistema',
+          observaciones,
+        }],
+      }}
+    }
+
+    case 'REGISTRAR_ACTIVIDAD_COLONIA': {
+      const { especieId: eId, colonia, actividad } = action
+      const espData = state[eId]
+      return {
+        ...state,
+        [eId]: {
+          ...espData,
+          actividadesColonia: {
+            ...(espData.actividadesColonia ?? {}),
+            [colonia]: [...(espData.actividadesColonia?.[colonia] ?? []), actividad],
+          },
+        },
+      }
+    }
+
     default: return state
   }
 }
@@ -386,6 +426,14 @@ export function ICIVETProvider({ children }) {
   // Historial individual
   function registrarEventoAnimal(especieId, evento) { dispatch({ type: 'REGISTRAR_EVENTO_ANIMAL', especieId, evento }) }
 
+  // Registro de actividades por colonia
+  function registrarActividadColonia(especieId, colonia, actividad) { dispatch({ type: 'REGISTRAR_ACTIVIDAD_COLONIA', especieId, colonia, actividad }) }
+
+  // Transferencia entre colonias
+  function transferirAnimal(especieId, animalId, coloniaOrigen, coloniaDestino, nuevaColoniaKey, fecha, responsable, observaciones) {
+    dispatch({ type: 'TRANSFERIR_ANIMAL', especieId, animalId, coloniaOrigen, coloniaDestino, nuevaColoniaKey, fecha, responsable, observaciones })
+  }
+
   function getDatosEspecie(especieId) { return datos[especieId] ?? null }
 
   return (
@@ -395,7 +443,7 @@ export function ICIVETProvider({ children }) {
       crearJaula, editarEstadoJaula,
       registrarNacimientoProd, registrarDesteeProd, registrarSeleccionProd,
       crearJaulaStock, registrarMovimientoStock, registrarTransferenciaStock,
-      registrarEventoAnimal,
+      registrarEventoAnimal, registrarActividadColonia, transferirAnimal,
     }}>
       {children}
     </ICIVETContext.Provider>

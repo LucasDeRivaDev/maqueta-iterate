@@ -152,6 +152,7 @@ const DATOS_INICIALES = {
   ],
 
   historialEventos: [],
+  actividadesGenerales: [],
 }
 
 // ── Reducer ──────────────────────────────────────────────────────────────────
@@ -255,6 +256,14 @@ function reducer(state, action) {
       }
     }
 
+    case 'REGISTRAR_ACTIVIDAD_GENERAL': {
+      const { actividad } = action
+      return {
+        ...state,
+        actividadesGenerales: [...(state.actividadesGenerales ?? []), actividad],
+      }
+    }
+
     default: return state
   }
 }
@@ -272,6 +281,7 @@ export function ConejoProvider({ children }) {
   function actualizarServicio(servicioId, cambios, usuario)                 { dispatch({ type: 'ACTUALIZAR_SERVICIO',          servicioId, cambios, usuario }) }
   function cambiarEstadoAnimal(animalId, nuevoEstado, usuario)              { dispatch({ type: 'CAMBIAR_ESTADO_ANIMAL',        animalId, nuevoEstado, usuario }) }
   function registrarEventoHistorial(evento)                                 { dispatch({ type: 'REGISTRAR_EVENTO_HISTORIAL',   evento }) }
+  function registrarActividadGeneral(actividad)                             { dispatch({ type: 'REGISTRAR_ACTIVIDAD_GENERAL',  actividad }) }
 
   return (
     <ConejoContext.Provider value={{
@@ -279,7 +289,7 @@ export function ConejoProvider({ children }) {
       registrarIngreso, registrarEventoSanitario,
       tomarDecisionCuarentena, registrarServicio,
       actualizarServicio, cambiarEstadoAnimal,
-      registrarEventoHistorial,
+      registrarEventoHistorial, registrarActividadGeneral,
     }}>
       {children}
     </ConejoContext.Provider>

@@ -1,13 +1,15 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useTheme } from '../context/ThemeContext'
 import { useICIVET, ESPECIES_CONFIG } from '../context/ICIVETContext'
 import FichaAnimalICIVET from './FichaAnimalICIVET'
+import RegistroActividades from './RegistroActividades'
 
 const TABS_FUND = [
-  { id: 'parejas', label: 'Parejas' },
-  { id: 'camadas', label: 'Camadas' },
-  { id: 'seleccion', label: 'Selección' },
-  { id: 'genealogia', label: 'Genealogía' },
+  { id: 'parejas',     label: 'Parejas' },
+  { id: 'camadas',     label: 'Camadas' },
+  { id: 'seleccion',   label: 'Selección' },
+  { id: 'genealogia',  label: 'Genealogía' },
+  { id: 'actividades', label: 'Actividades' },
 ]
 
 const DESTINO_CONFIG = {
@@ -673,6 +675,42 @@ function TabGenealogia({ animales, camadas, reproductores, tema, onFichaAnimal }
   )
 }
 
+// ── Tab: Actividades ─────────────────────────────────────────────────────────
+function TabActividadesFund({ datos, especieId, cfg }) {
+  const { registrarActividadColonia } = useICIVET()
+
+  const actividadesAuto = useMemo(() => {
+    const evs = []
+    datos.camadas?.forEach(c => {
+      evs.push({
+        id: `auto-fund-nac-${c.id}`,
+        fecha: c.fechaNacimiento, hora: '--', usuario: 'Sistema',
+        descripcion: `Nacimiento de camada ${c.codigo} — ${c.cantidadNacida} crías. Pareja: ♂ ${c.padreId} × ♀ ${c.madreId}.`,
+        tipo: 'automatico', tag: 'nacimiento',
+      })
+      if (c.destetada && c.fechaDestete) {
+        evs.push({
+          id: `auto-fund-dest-${c.id}`,
+          fecha: c.fechaDestete, hora: '--', usuario: 'Sistema',
+          descripcion: `Destete de camada ${c.codigo} — ${c.cantidadDestetada} animales (♂ ${c.machos} · ♀ ${c.hembras}).`,
+          tipo: 'automatico', tag: 'destete',
+        })
+      }
+    })
+    return evs
+  }, [datos.camadas])
+
+  return (
+    <RegistroActividades
+      actividadesManuales={datos.actividadesColonia?.fundacion ?? []}
+      actividadesAuto={actividadesAuto}
+      accentColor={cfg.color}
+      coloniaLabel="Colonia de Fundación"
+      onRegistrar={act => registrarActividadColonia(especieId, 'fundacion', act)}
+    />
+  )
+}
+
 // ── Fundación principal ──────────────────────────────────────────────────────
 export default function Fundacion({ especieId }) {
   const { getDatosEspecie } = useICIVET()
@@ -763,7 +801,8 @@ export default function Fundacion({ especieId }) {
       {tabActual === 'parejas'    && <TabParejas datos={parejas} reproductores={reproductores} tema={tema} onFichaAnimal={setFichaAnimalId} />}
       {tabActual === 'camadas'    && <TabCamadas camadas={camadas} especieId={especieId} tema={tema} />}
       {tabActual === 'seleccion'  && <TabSeleccion animales={animales} camadas={camadas} especieId={especieId} tema={tema} onFichaAnimal={setFichaAnimalId} />}
-      {tabActual === 'genealogia' && <TabGenealogia animales={animales} camadas={camadas} reproductores={reproductores} tema={tema} onFichaAnimal={setFichaAnimalId} />}
+      {tabActual === 'genealogia'  && <TabGenealogia animales={animales} camadas={camadas} reproductores={reproductores} tema={tema} onFichaAnimal={setFichaAnimalId} />}
+      {tabActual === 'actividades' && <TabActividadesFund datos={datos} especieId={especieId} cfg={cfg} />}
     </div>
   )
 }

@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../context/ThemeContext'
 import { ESPECIES_CONFIG } from '../context/ICIVETContext'
-import { ConejoProvider } from '../context/ConejoContext'
+import { ConejoProvider, useConejo } from '../context/ConejoContext'
 import ColoniaTab      from './conejo/ColoniaTab'
 import CuarentenaTab   from './conejo/CuarentenaTab'
 import ReproduccionTab from './conejo/ReproduccionTab'
 import IndicadoresTab  from './conejo/IndicadoresTab'
+import RegistroActividades from './RegistroActividades'
 import logoNavDark     from '../assets/logoiterate.png'
 import logoNavLight    from '../assets/logoiteratefondoclaro.png'
 
@@ -18,7 +19,62 @@ const TABS = [
   { id: 'cuarentena',    label: 'Cuarentena',    sub: 'Control sanitario'   },
   { id: 'reproduccion',  label: 'Reproducción',  sub: 'Servicios y partos'  },
   { id: 'indicadores',   label: 'Indicadores',   sub: 'Métricas'            },
+  { id: 'actividades',   label: 'Actividades',   sub: 'Registro de colonia' },
 ]
+
+// ── Actividades del bioterio de conejos ──────────────────────────────────────
+function ActividadesConejoTab() {
+  const { datos, registrarActividadGeneral } = useConejo()
+
+  const actividadesAuto = useMemo(() => {
+    const evs = []
+    // Ingresos de lotes
+    datos.ingresos?.forEach(ing => {
+      evs.push({
+        id: `auto-cone-ing-${ing.id}`,
+        fecha: ing.fechaIngreso, hora: '--', usuario: ing.responsableRecepcion,
+        descripcion: `Ingreso de lote ${ing.loteCompra} — ${ing.animalesIds.length} animales desde ${ing.procedencia}.${ing.observaciones ? ' ' + ing.observaciones : ''}`,
+        tipo: 'automatico', tag: 'ingreso',
+      })
+    })
+    // Partos y destetes
+    datos.servicios?.forEach(s => {
+      if (s.fechaPartoReal) evs.push({
+        id: `auto-cone-parto-${s.id}`,
+        fecha: s.fechaPartoReal, hora: '--', usuario: 'Sistema',
+        descripcion: `Parto registrado (servicio ${s.id}) — ${s.nacidos?.vivos ?? '?'} gazapos vivos. ♂ ${s.machoId} × ♀ ${s.hembraId}.`,
+        tipo: 'automatico', tag: 'nacimiento',
+      })
+      if (s.destete) evs.push({
+        id: `auto-cone-dest-${s.id}`,
+        fecha: s.destete.fecha, hora: '--', usuario: 'Sistema',
+        descripcion: `Destete (servicio ${s.id}) — ${s.destete.destetados} gazapos (♂ ${s.destete.machos} · ♀ ${s.destete.hembras}).`,
+        tipo: 'automatico', tag: 'destete',
+      })
+    })
+    // Cambios de estado (auditoría de animales)
+    datos.auditoria?.filter(a => a.accion === 'cambio_estado').forEach(a => {
+      evs.push({
+        id: `auto-cone-aud-${a.id}`,
+        fecha: a.fecha.split('T')[0], hora: a.fecha.split('T')[1]?.slice(0,5) ?? '--',
+        usuario: a.usuario,
+        descripcion: `Cambio de estado de ${a.entidadId}: ${a.valorAnterior ?? '—'} → ${a.valorNuevo}.`,
+        tipo: 'automatico', tag: 'transferencia',
+      })
+    })
+    return evs
+  }, [datos.ingresos, datos.servicios, datos.auditoria])
+
+  return (
+    <RegistroActividades
+      actividadesManuales={datos.actividadesGenerales ?? []}
+      actividadesAuto={actividadesAuto}
+      accentColor="#ffb300"
+      coloniaLabel="Bioterio de Conejos"
+      onRegistrar={registrarActividadGeneral}
+    />
+  )
+}
 
 function ConejoPageInner() {
   const navigate = useNavigate()
@@ -86,6 +142,7 @@ function ConejoPageInner() {
         {tabActivo === 'cuarentena'   && <CuarentenaTab />}
         {tabActivo === 'reproduccion' && <ReproduccionTab />}
         {tabActivo === 'indicadores'  && <IndicadoresTab />}
+        {tabActivo === 'actividades'  && <ActividadesConejoTab />}
       </div>
     </div>
   )
