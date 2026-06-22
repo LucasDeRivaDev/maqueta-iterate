@@ -148,15 +148,26 @@ const DATOS_INICIALES = {
     stock: {
       jaulas: [
         { id: 'JAU-S-W-001', codigo: 'JAU-S-W-001', cepa: 'Wistar', sexo: 'macho',  cantidadActual: 1, fechaIngreso: '2026-06-11', fechaNacimiento: '2026-05-21', origenId: 'CAM-P-W-001', origenTipo: 'produccion', observaciones: '', estado: 'activo' },
-        { id: 'JAU-S-W-002', codigo: 'JAU-S-W-002', cepa: 'Wistar', sexo: 'hembra', cantidadActual: 3, fechaIngreso: '2026-06-11', fechaNacimiento: '2026-05-21', origenId: 'CAM-P-W-001', origenTipo: 'produccion', observaciones: '', estado: 'activo' },
+        { id: 'JAU-S-W-002', codigo: 'JAU-S-W-002', cepa: 'Wistar', sexo: 'hembra', cantidadActual: 1, fechaIngreso: '2026-06-11', fechaNacimiento: '2026-05-21', origenId: 'CAM-P-W-001', origenTipo: 'produccion', observaciones: '', estado: 'activo' },
+        { id: 'JAU-S-W-003', codigo: 'JAU-S-W-003', cepa: 'Wistar', sexo: 'macho',  cantidadActual: 2, fechaIngreso: '2026-06-18', fechaNacimiento: '2026-05-21', origenId: null, origenTipo: 'manual', observaciones: 'Lote adicional ingresado manualmente.', estado: 'activo' },
       ],
       movimientos: [
         { id: 'MOV-W-001', tipo: 'ingreso_produccion', fecha: '2026-06-11', cantidad: 3, sexo: 'macho',  cepa: 'Wistar', jaulaId: 'JAU-S-W-001', investigador: '', proyecto: '', motivo: 'Ingreso desde Producción — CAM-P-W-001', observaciones: '' },
         { id: 'MOV-W-002', tipo: 'ingreso_produccion', fecha: '2026-06-11', cantidad: 3, sexo: 'hembra', cepa: 'Wistar', jaulaId: 'JAU-S-W-002', investigador: '', proyecto: '', motivo: 'Ingreso desde Producción — CAM-P-W-001', observaciones: '' },
         { id: 'MOV-W-003', tipo: 'entrega',            fecha: '2026-06-15', cantidad: 2, sexo: 'macho',  cepa: 'Wistar', jaulaId: 'JAU-S-W-001', investigador: 'Dra. García',    proyecto: 'Protocolo EXP-2026-04 — Metabolismo lipídico', motivo: '', observaciones: 'Entrega urgente para experimento en curso.' },
+        { id: 'MOV-W-004', tipo: 'ingreso_manual',     fecha: '2026-06-18', cantidad: 5, sexo: 'macho',  cepa: 'Wistar', jaulaId: 'JAU-S-W-003', investigador: '', proyecto: '', motivo: 'Ingreso manual de lote adicional', observaciones: '' },
+        { id: 'MOV-W-005', tipo: 'entrega',            fecha: '2026-06-19', cantidad: 1, sexo: 'hembra', cepa: 'Wistar', jaulaId: 'JAU-S-W-002', investigador: 'Investigador B', proyecto: 'Protocolo EXP-2026-05 — Respuesta inmune en hembras', motivo: '', observaciones: '' },
+        { id: 'MOV-W-006', tipo: 'baja_sacrificio',    fecha: '2026-06-20', cantidad: 1, sexo: 'hembra', cepa: 'Wistar', jaulaId: 'JAU-S-W-002', investigador: '', proyecto: '', motivo: 'Baja por sobrepoblación — reducción de lote', observaciones: '' },
+        { id: 'MOV-W-007', tipo: 'entrega',            fecha: '2026-06-20', cantidad: 2, sexo: 'macho',  cepa: 'Wistar', jaulaId: 'JAU-S-W-003', investigador: 'Investigador A', proyecto: 'Protocolo EXP-2026-03 — Evaluación neurológica', motivo: '', observaciones: '' },
+        { id: 'MOV-W-008', tipo: 'baja_muerte',        fecha: '2026-06-21', cantidad: 1, sexo: 'macho',  cepa: 'Wistar', jaulaId: 'JAU-S-W-003', investigador: '', proyecto: '', motivo: 'Baja por edad avanzada — superó período de uso', observaciones: '' },
       ],
     },
-    historialEventos: [],
+    historialEventos: [
+      { id: 'EVT-W-001', animalId: 'A-W-002-07', fecha: '2026-06-19', tipo: 'uso_experimental', descripcion: 'Entregada a Investigador B — Protocolo EXP-2026-05 — Respuesta inmune en hembras.', usuario: 'Bioterista' },
+      { id: 'EVT-W-002', animalId: 'A-W-001-03', fecha: '2026-06-20', tipo: 'uso_experimental', descripcion: 'Entregado a Investigador A — Protocolo EXP-2026-03 — Evaluación neurológica.', usuario: 'Bioterista' },
+      { id: 'EVT-W-003', animalId: 'A-W-001-08', fecha: '2026-06-20', tipo: 'procedimiento',    descripcion: 'Baja por sobrepoblación — reducción de lote Stock Wistar. Animal sacrificado según protocolo.', usuario: 'Bioterista' },
+      { id: 'EVT-W-004', animalId: 'A-W-002-03', fecha: '2026-06-21', tipo: 'procedimiento',    descripcion: 'Baja por edad avanzada — superó período de uso. Animal sacrificado según protocolo.', usuario: 'Bioterista' },
+    ],
     actividadesColonia: { fundacion: [], produccion: [], stock: [] },
   },
 
@@ -197,8 +208,24 @@ const DATOS_INICIALES = {
       ],
       camadas: [],
     },
-    stock: { jaulas: [], movimientos: [] },
-    historialEventos: [],
+    stock: {
+      jaulas: [
+        { id: 'JAU-S-B-001', codigo: 'JAU-S-B-001', cepa: 'BALB/c', sexo: 'macho',  cantidadActual: 1, fechaIngreso: '2026-06-15', fechaNacimiento: '2026-05-05', origenId: null, origenTipo: 'manual', observaciones: '', estado: 'activo' },
+        { id: 'JAU-S-B-002', codigo: 'JAU-S-B-002', cepa: 'BALB/c', sexo: 'hembra', cantidadActual: 1, fechaIngreso: '2026-06-15', fechaNacimiento: '2026-05-05', origenId: null, origenTipo: 'manual', observaciones: '', estado: 'activo' },
+      ],
+      movimientos: [
+        { id: 'MOV-B-001', tipo: 'ingreso_manual',  fecha: '2026-06-15', cantidad: 6, sexo: 'macho',  cepa: 'BALB/c', jaulaId: 'JAU-S-B-001', investigador: '', proyecto: '', motivo: 'Ingreso manual de lote inicial', observaciones: '' },
+        { id: 'MOV-B-002', tipo: 'ingreso_manual',  fecha: '2026-06-15', cantidad: 4, sexo: 'hembra', cepa: 'BALB/c', jaulaId: 'JAU-S-B-002', investigador: '', proyecto: '', motivo: 'Ingreso manual de lote inicial', observaciones: '' },
+        { id: 'MOV-B-003', tipo: 'baja_sacrificio', fecha: '2026-06-16', cantidad: 2, sexo: 'macho',  cepa: 'BALB/c', jaulaId: 'JAU-S-B-001', investigador: '', proyecto: '', motivo: 'Baja por sobrepoblación — reducción de densidad', observaciones: '' },
+        { id: 'MOV-B-004', tipo: 'entrega',         fecha: '2026-06-17', cantidad: 3, sexo: 'macho',  cepa: 'BALB/c', jaulaId: 'JAU-S-B-001', investigador: 'Investigador C', proyecto: 'Protocolo EXP-2026-07 — Modelos de inflamación', motivo: '', observaciones: '' },
+        { id: 'MOV-B-005', tipo: 'entrega',         fecha: '2026-06-18', cantidad: 2, sexo: 'hembra', cepa: 'BALB/c', jaulaId: 'JAU-S-B-002', investigador: 'Investigador D', proyecto: 'Protocolo EXP-2026-08 — Respuesta a vacunas', motivo: '', observaciones: '' },
+        { id: 'MOV-B-006', tipo: 'baja_muerte',     fecha: '2026-06-19', cantidad: 1, sexo: 'hembra', cepa: 'BALB/c', jaulaId: 'JAU-S-B-002', investigador: '', proyecto: '', motivo: 'Baja por edad avanzada — deterioro físico progresivo', observaciones: '' },
+      ],
+    },
+    historialEventos: [
+      { id: 'EVT-B-001', animalId: 'A-B-001-03', fecha: '2026-06-16', tipo: 'procedimiento', descripcion: 'Baja por sobrepoblación — reducción de densidad en Stock BALB/c. Animal sacrificado según protocolo.', usuario: 'Bioterista' },
+      { id: 'EVT-B-002', animalId: 'A-B-001-07', fecha: '2026-06-19', tipo: 'procedimiento', descripcion: 'Baja por edad avanzada — deterioro físico progresivo. Animal sacrificado según protocolo.', usuario: 'Bioterista' },
+    ],
     actividadesColonia: { fundacion: [], produccion: [], stock: [] },
   },
 
@@ -234,7 +261,20 @@ const DATOS_INICIALES = {
       ],
       camadas: [],
     },
-    stock: { jaulas: [], movimientos: [] },
+    stock: {
+      jaulas: [
+        { id: 'JAU-S-C-001', codigo: 'JAU-S-C-001', cepa: 'C57BL/6', sexo: 'macho',  cantidadActual: 1, fechaIngreso: '2026-06-16', fechaNacimiento: '2026-05-10', origenId: null, origenTipo: 'manual', observaciones: '', estado: 'activo' },
+        { id: 'JAU-S-C-002', codigo: 'JAU-S-C-002', cepa: 'C57BL/6', sexo: 'hembra', cantidadActual: 1, fechaIngreso: '2026-06-16', fechaNacimiento: '2026-05-10', origenId: null, origenTipo: 'manual', observaciones: '', estado: 'activo' },
+      ],
+      movimientos: [
+        { id: 'MOV-C-001', tipo: 'ingreso_manual',  fecha: '2026-06-16', cantidad: 4, sexo: 'macho',  cepa: 'C57BL/6', jaulaId: 'JAU-S-C-001', investigador: '', proyecto: '', motivo: 'Ingreso manual de lote inicial', observaciones: '' },
+        { id: 'MOV-C-002', tipo: 'ingreso_manual',  fecha: '2026-06-16', cantidad: 4, sexo: 'hembra', cepa: 'C57BL/6', jaulaId: 'JAU-S-C-002', investigador: '', proyecto: '', motivo: 'Ingreso manual de lote inicial', observaciones: '' },
+        { id: 'MOV-C-003', tipo: 'baja_sacrificio', fecha: '2026-06-18', cantidad: 1, sexo: 'macho',  cepa: 'C57BL/6', jaulaId: 'JAU-S-C-001', investigador: '', proyecto: '', motivo: 'Baja por sobrepoblación — ajuste de densidad', observaciones: '' },
+        { id: 'MOV-C-004', tipo: 'baja_muerte',     fecha: '2026-06-19', cantidad: 2, sexo: 'hembra', cepa: 'C57BL/6', jaulaId: 'JAU-S-C-002', investigador: '', proyecto: '', motivo: 'Baja por edad avanzada — animales fuera de rango de uso', observaciones: '' },
+        { id: 'MOV-C-005', tipo: 'entrega',         fecha: '2026-06-20', cantidad: 2, sexo: 'macho',  cepa: 'C57BL/6', jaulaId: 'JAU-S-C-001', investigador: 'Investigador E', proyecto: 'Protocolo EXP-2026-09 — Oncología experimental', motivo: '', observaciones: '' },
+        { id: 'MOV-C-006', tipo: 'entrega',         fecha: '2026-06-21', cantidad: 1, sexo: 'hembra', cepa: 'C57BL/6', jaulaId: 'JAU-S-C-002', investigador: 'Investigador A', proyecto: 'Protocolo EXP-2026-04 — Metabolismo lipídico', motivo: '', observaciones: '' },
+      ],
+    },
     historialEventos: [],
     actividadesColonia: { fundacion: [], produccion: [], stock: [] },
   },
