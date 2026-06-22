@@ -2,6 +2,19 @@ import { useState } from 'react'
 import { useTheme } from '../context/ThemeContext'
 import { useICIVET, ESPECIES_CONFIG } from '../context/ICIVETContext'
 
+// ── Configuración de colonias ────────────────────────────────────────────────
+const COLONIAS = {
+  fundacion:  { label: 'Fundación',  color: '#00e676', key: 'fundacion'      },
+  produccion: { label: 'Producción', color: '#40c4ff', key: 'produccion'     },
+  stock:      { label: 'Stock',      color: '#ce93d8', key: 'no_seleccionado' },
+}
+
+const DESTINOS_VALIDOS = {
+  fundacion:       [{ ...COLONIAS.produccion }],
+  produccion:      [{ ...COLONIAS.stock }],
+  no_seleccionado: [],
+}
+
 // ── Tipos de eventos manuales ────────────────────────────────────────────────
 const TIPOS_EVENTO = {
   observacion:   { label: 'Observación',        color: '#40c4ff' },
@@ -48,6 +61,12 @@ function getColoniaActual(animal, datos) {
     case 'no_seleccionado': return 'Stock'
     default:                return '—'
   }
+}
+
+function getColoniaKey(animal) {
+  if (!animal) return null
+  if (animal.generacion || animal.origen === 'Fundación') return 'fundacion'
+  return animal.destino ?? null
 }
 
 function getJaulaActual(animal, datos) {
@@ -116,11 +135,21 @@ function buildHistorial(animal, datos) {
   }
 
   const manuales = (datos.historialEventos || []).filter(e => e.animalId === id)
-  manuales.forEach(e => evs.push({
-    ...e,
-    color: TIPOS_EVENTO[e.tipo]?.color ?? '#8a9bb0',
-    tipoLabel: TIPOS_EVENTO[e.tipo]?.label ?? e.tipo,
-  }))
+  manuales.forEach(e => {
+    if (e.tipo === 'transferencia_colonia') {
+      evs.push({
+        ...e,
+        color: '#8a9bb0',
+        tipoLabel: 'Transferencia de colonia',
+      })
+    } else {
+      evs.push({
+        ...e,
+        color: TIPOS_EVENTO[e.tipo]?.color ?? '#8a9bb0',
+        tipoLabel: TIPOS_EVENTO[e.tipo]?.label ?? e.tipo,
+      })
+    }
+  })
 
   return evs
     .filter(e => e.fecha || e.id?.startsWith('sys-ing'))
@@ -149,6 +178,11 @@ function buildMovimientos(animal, datos) {
 
   const jaulaProd = datos.produccion?.jaulas?.find(j => j.machoId === id || j.hembraIds?.includes(id))
   if (jaulaProd) movs.push({ fecha: jaulaProd.fechaFormacion, tipo: 'Incorporación a Producción', colonia: 'Producción', jaula: jaulaProd.codigo })
+
+  const transferencias = (datos.historialEventos || []).filter(e => e.animalId === id && e.tipo === 'transferencia_colonia')
+  transferencias.forEach(t => {
+    movs.push({ fecha: t.fecha, tipo: `Transferencia: ${t.coloniaOrigen} → ${t.coloniaDestino}`, colonia: t.coloniaDestino, jaula: '—' })
+  })
 
   return movs.sort((a, b) => (a.fecha ?? '').localeCompare(b.fecha ?? ''))
 }
@@ -574,6 +608,152 @@ function TabRegistrarEvento({ animal, especieId, cfg, onEventoRegistrado }) {
   )
 }
 
+// ── Modal: Transferir animal ─────────────────────────────────────────────────
+function ModalTransferirAnimal({ animal, especieId, cfg, onClose, onTransferido }) {
+  const { transferirAnimal } = useICIVET()
+  const { tema } = useTheme()
+  const [destino,      setDestino]      = useState('')
+  const [fecha,        setFecha]        = useState(new Date().toISOString().split('T')[0])
+  const [responsable,  setResponsable]  = useState('')
+  const [observaciones, setObservaciones] = useState('')
+  const [confirmado,   setConfirmado]   = useState(false)
+
+  const coloniaKey = getColoniaKey(animal)
+  const coloniaActual = getColoniaActual(animal, {})
+  const destinosValidos = DESTINOS_VALIDOS[coloniaKey] ?? []
+  const destinoSel = destinosValidos.find(d => d.key === destino)
+  const valido = !!destino && !!destinoSel
+
+  function confirmar() {
+    if (!valido) return
+    transferirAnimal(
+      especieId,
+      animal.id,
+      coloniaActual,
+      destinoSel.label,
+      destinoSel.key,
+      fecha,
+      responsable.trim() || 'Sistema',
+      observaciones.trim(),
+    )
+    setConfirmado(true)
+    setTimeout(() => { onTransferido?.(); onClose() }, 1200)
+  }
+
+  const inp = {
+    background: 'rgba(8,13,26,0.8)', border: `1px solid ${tema.bgCardBorde}`,
+    color: tema.textPrimary, borderRadius: '10px', padding: '8px 12px',
+    fontSize: '13px', outline: 'none', width: '100%',
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4"
+      style={{ background: 'rgba(5,8,16,0.92)', backdropFilter: 'blur(6px)' }}
+      onClick={onClose}>
+      <div className="w-full max-w-sm rounded-2xl overflow-hidden"
+        style={{ background: '#080d1a', border: `1.5px solid #8a9bb040`, maxHeight: '90vh', overflowY: 'auto' }}
+        onClick={e => e.stopPropagation()}>
+
+        <div className="px-6 py-4" style={{ borderBottom: '1px solid rgba(138,155,176,0.2)', background: 'rgba(138,155,176,0.04)' }}>
+          <div className="font-bold text-base" style={{ color: '#c9d4e0' }}>Transferir animal</div>
+          <div className="text-xs font-mono mt-0.5" style={{ color: '#4a5f7a' }}>{animal.id}</div>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          {/* Origen */}
+          <div className="rounded-xl px-4 py-3 flex items-center gap-3"
+            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(138,155,176,0.15)' }}>
+            <div className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#4a5f7a' }}>Colonia actual</div>
+            <div className="ml-auto">
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                style={{ background: 'rgba(138,155,176,0.12)', border: '1px solid rgba(138,155,176,0.3)', color: '#8a9bb0' }}>
+                {coloniaActual}
+              </span>
+            </div>
+          </div>
+
+          {destinosValidos.length === 0 ? (
+            <div className="text-sm text-center py-4" style={{ color: '#8a9bb0' }}>
+              Este animal no puede ser transferido desde su colonia actual.
+            </div>
+          ) : (
+            <>
+              {/* Destino */}
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-widest block mb-2" style={{ color: '#4a5f7a' }}>Colonia de destino</label>
+                <div className="space-y-2">
+                  {destinosValidos.map(d => (
+                    <button key={d.key} onClick={() => setDestino(d.key)}
+                      className="w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 transition-all"
+                      style={{
+                        background: destino === d.key ? `${d.color}12` : 'rgba(255,255,255,0.02)',
+                        border: `1.5px solid ${destino === d.key ? d.color + '50' : 'rgba(138,155,176,0.15)'}`,
+                        cursor: 'pointer',
+                      }}>
+                      <div className="w-2.5 h-2.5 rounded-full" style={{ background: destino === d.key ? d.color : '#4a5f7a' }} />
+                      <span className="text-sm font-semibold" style={{ color: destino === d.key ? d.color : tema.textSecondary }}>
+                        {d.label}
+                      </span>
+                      {destino === d.key && <span className="ml-auto text-xs" style={{ color: d.color }}>✓ Seleccionado</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Fecha */}
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-widest block mb-1.5" style={{ color: '#4a5f7a' }}>Fecha de transferencia</label>
+                <input type="date" value={fecha} onChange={e => setFecha(e.target.value)} style={inp} />
+              </div>
+
+              {/* Responsable */}
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-widest block mb-1.5" style={{ color: '#4a5f7a' }}>Responsable</label>
+                <input type="text" value={responsable} onChange={e => setResponsable(e.target.value)}
+                  placeholder="Nombre del responsable" style={inp} />
+              </div>
+
+              {/* Observaciones */}
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-widest block mb-1.5" style={{ color: '#4a5f7a' }}>Observaciones</label>
+                <textarea value={observaciones} onChange={e => setObservaciones(e.target.value)}
+                  rows={2} placeholder="Opcional" style={{ ...inp, resize: 'vertical' }} />
+              </div>
+
+              {/* Aviso */}
+              {valido && (
+                <div className="rounded-xl px-4 py-3 text-xs" style={{ background: 'rgba(138,155,176,0.06)', border: '1px solid rgba(138,155,176,0.2)', color: '#8a9bb0' }}>
+                  El animal <span className="font-mono font-bold" style={{ color: cfg.color }}>{animal.id}</span> se moverá de{' '}
+                  <strong>{coloniaActual}</strong> a <strong>{destinoSel?.label}</strong>. Se conservará toda su información, genealogía e historial.
+                </div>
+              )}
+
+              {/* Botones */}
+              <div className="flex gap-3 pt-1">
+                <button onClick={onClose}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold"
+                  style={{ background: 'transparent', border: '1px solid rgba(30,51,82,0.9)', color: '#8a9bb0', cursor: 'pointer' }}>
+                  Cancelar
+                </button>
+                <button onClick={confirmar} disabled={!valido || confirmado}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-bold"
+                  style={{
+                    background: confirmado ? 'rgba(0,230,118,0.18)' : valido ? 'rgba(138,155,176,0.15)' : 'rgba(138,155,176,0.05)',
+                    border: `1.5px solid ${confirmado ? 'rgba(0,230,118,0.5)' : valido ? 'rgba(138,155,176,0.4)' : 'rgba(138,155,176,0.15)'}`,
+                    color: confirmado ? '#00e676' : valido ? '#c9d4e0' : '#4a5f7a',
+                    cursor: valido && !confirmado ? 'pointer' : 'not-allowed',
+                  }}>
+                  {confirmado ? '✓ Transferido' : 'Confirmar transferencia'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Modal principal ──────────────────────────────────────────────────────────
 export default function FichaAnimalICIVET({ animalId, especieId, onClose }) {
   const { tema } = useTheme()
@@ -582,6 +762,7 @@ export default function FichaAnimalICIVET({ animalId, especieId, onClose }) {
 
   const [navStack, setNavStack] = useState([animalId])
   const [tabActivo, setTabActivo] = useState('datos')
+  const [modalTransferir, setModalTransferir] = useState(false)
 
   const fichaId = navStack[navStack.length - 1]
   const datos   = getDatosEspecie(especieId)
@@ -630,10 +811,23 @@ export default function FichaAnimalICIVET({ animalId, especieId, onClose }) {
 
   const sexColor = animal.sexo === 'macho' ? '#40c4ff' : '#ce93d8'
 
+  const coloniaKey = getColoniaKey(animal)
+  // Solo animales con campo `destino` pueden transferirse (excluye reproductores de Fundación)
+  const puedeTransferir = !!animal.destino && !!coloniaKey && (DESTINOS_VALIDOS[coloniaKey]?.length ?? 0) > 0
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: 'rgba(5,8,16,0.92)', backdropFilter: 'blur(6px)' }}
       onClick={onClose}>
+      {modalTransferir && (
+        <ModalTransferirAnimal
+          animal={animal}
+          especieId={especieId}
+          cfg={cfg}
+          onClose={() => setModalTransferir(false)}
+          onTransferido={() => setTabActivo('movimientos')}
+        />
+      )}
       <div className="w-full max-w-2xl rounded-2xl overflow-hidden flex flex-col"
         style={{ background: '#080d1a', border: `1.5px solid ${cfg.color}40`, maxHeight: '92vh' }}
         onClick={e => e.stopPropagation()}>
@@ -679,6 +873,13 @@ export default function FichaAnimalICIVET({ animalId, especieId, onClose }) {
               <span>{cfg.nombre}</span>
             </div>
           </div>
+          {puedeTransferir && (
+            <button onClick={e => { e.stopPropagation(); setModalTransferir(true) }}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold shrink-0"
+              style={{ background: 'rgba(138,155,176,0.12)', border: '1px solid rgba(138,155,176,0.35)', color: '#8a9bb0', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              ↔ Transferir
+            </button>
+          )}
           <button onClick={onClose}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold shrink-0"
             style={{ background: 'rgba(255,107,128,0.12)', border: '1px solid rgba(255,107,128,0.3)', color: '#ff6b80', cursor: 'pointer' }}>
