@@ -156,6 +156,7 @@ const DATOS_INICIALES = {
         { id: 'MOV-W-003', tipo: 'entrega',            fecha: '2026-06-15', cantidad: 2, sexo: 'macho',  cepa: 'Wistar', jaulaId: 'JAU-S-W-001', investigador: 'Dra. García',    proyecto: 'Protocolo EXP-2026-04 — Metabolismo lipídico', motivo: '', observaciones: 'Entrega urgente para experimento en curso.' },
       ],
     },
+    historialEventos: [],
   },
 
   balbc: {
@@ -196,6 +197,7 @@ const DATOS_INICIALES = {
       camadas: [],
     },
     stock: { jaulas: [], movimientos: [] },
+    historialEventos: [],
   },
 
   c57: {
@@ -231,6 +233,7 @@ const DATOS_INICIALES = {
       camadas: [],
     },
     stock: { jaulas: [], movimientos: [] },
+    historialEventos: [],
   },
 }
 
@@ -346,6 +349,14 @@ function reducer(state, action) {
       }}}
     }
 
+    case 'REGISTRAR_EVENTO_ANIMAL': {
+      const espData = state[action.especieId]
+      return { ...state, [action.especieId]: {
+        ...espData,
+        historialEventos: [...(espData.historialEventos ?? []), action.evento],
+      }}
+    }
+
     default: return state
   }
 }
@@ -372,6 +383,9 @@ export function ICIVETProvider({ children }) {
   function registrarMovimientoStock(especieId, movimiento, jaulaId, delta)                         { dispatch({ type: 'MOVIMIENTO_STOCK',      especieId, movimiento, jaulaId, delta }) }
   function registrarTransferenciaStock(especieId, movDesde, movHacia, desdeId, hastaId, cantidad)  { dispatch({ type: 'TRANSFERENCIA_STOCK',   especieId, movDesde, movHacia, desdeId, hastaId, cantidad }) }
 
+  // Historial individual
+  function registrarEventoAnimal(especieId, evento) { dispatch({ type: 'REGISTRAR_EVENTO_ANIMAL', especieId, evento }) }
+
   function getDatosEspecie(especieId) { return datos[especieId] ?? null }
 
   return (
@@ -381,6 +395,7 @@ export function ICIVETProvider({ children }) {
       crearJaula, editarEstadoJaula,
       registrarNacimientoProd, registrarDesteeProd, registrarSeleccionProd,
       crearJaulaStock, registrarMovimientoStock, registrarTransferenciaStock,
+      registrarEventoAnimal,
     }}>
       {children}
     </ICIVETContext.Provider>

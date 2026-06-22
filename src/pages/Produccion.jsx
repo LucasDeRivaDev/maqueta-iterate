@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTheme } from '../context/ThemeContext'
 import { useICIVET, ESPECIES_CONFIG, GESTACION_DIAS, DESTETE_DIAS } from '../context/ICIVETContext'
+import FichaAnimalICIVET from './FichaAnimalICIVET'
 
 // ── Utilidades de fechas ─────────────────────────────────────────────────────
 function addDias(dateStr, days) {
@@ -282,7 +283,7 @@ function ModalSeleccion({ camada, especieId, cfg, onClose }) {
 }
 
 // ── Tarjeta de Jaula ─────────────────────────────────────────────────────────
-function TarjetaJaula({ jaula, camadas, cfg, tema, onNacimiento, onCambiarEstado }) {
+function TarjetaJaula({ jaula, camadas, cfg, tema, onNacimiento, onCambiarEstado, onFichaAnimal }) {
   const camadasJaula   = camadas.filter(c => c.jaulaId === jaula.id)
   const camadasActivas = camadasJaula.filter(c => !c.destete)
   const gestDias       = GESTACION_DIAS[cfg.id] ?? 21
@@ -320,13 +321,19 @@ function TarjetaJaula({ jaula, camadas, cfg, tema, onNacimiento, onCambiarEstado
       <div className="px-4 py-3 grid grid-cols-2 md:grid-cols-4 gap-3">
         <div>
           <div className="text-xs uppercase tracking-widest font-semibold mb-1" style={{ color: tema.textMuted }}>Macho</div>
-          <div className="font-mono text-sm font-bold" style={{ color: '#40c4ff' }}>♂ {jaula.machoId}</div>
+          <button onClick={() => onFichaAnimal?.(jaula.machoId)} className="font-mono text-sm font-bold"
+            style={{ color: '#40c4ff', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+            ♂ {jaula.machoId}
+          </button>
         </div>
         <div>
           <div className="text-xs uppercase tracking-widest font-semibold mb-1" style={{ color: tema.textMuted }}>Hembras</div>
           <div className="space-y-0.5">
             {jaula.hembraIds.map(h => (
-              <div key={h} className="font-mono text-sm font-bold" style={{ color: '#ce93d8' }}>♀ {h}</div>
+              <button key={h} onClick={() => onFichaAnimal?.(h)} className="font-mono text-sm font-bold block"
+                style={{ color: '#ce93d8', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                ♀ {h}
+              </button>
             ))}
           </div>
         </div>
@@ -379,7 +386,7 @@ function TarjetaJaula({ jaula, camadas, cfg, tema, onNacimiento, onCambiarEstado
 }
 
 // ── Tarjeta de Camada ────────────────────────────────────────────────────────
-function TarjetaCamada({ camada, cfg, tema, onDestete, onSeleccion }) {
+function TarjetaCamada({ camada, cfg, tema, onDestete, onSeleccion, onFichaAnimal }) {
   const desteteEst = addDias(camada.fechaNacimiento, DESTETE_DIAS)
   const diasDest   = diasHasta(desteteEst)
 
@@ -422,12 +429,20 @@ function TarjetaCamada({ camada, cfg, tema, onDestete, onSeleccion }) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
           <div>
             <div className="text-xs uppercase tracking-widest font-semibold mb-1" style={{ color: tema.textMuted }}>Macho</div>
-            <div className="font-mono text-sm font-bold" style={{ color: '#40c4ff' }}>♂ {camada.machoId}</div>
+            <button onClick={() => onFichaAnimal?.(camada.machoId)} className="font-mono text-sm font-bold"
+              style={{ color: '#40c4ff', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+              ♂ {camada.machoId}
+            </button>
           </div>
           <div>
             <div className="text-xs uppercase tracking-widest font-semibold mb-1" style={{ color: tema.textMuted }}>Hembras</div>
             <div className="space-y-0.5">
-              {camada.hembraIds.map(h => <div key={h} className="font-mono text-sm font-bold" style={{ color: '#ce93d8' }}>♀ {h}</div>)}
+              {camada.hembraIds.map(h => (
+                <button key={h} onClick={() => onFichaAnimal?.(h)} className="font-mono text-sm font-bold block"
+                  style={{ color: '#ce93d8', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+                  ♀ {h}
+                </button>
+              ))}
             </div>
           </div>
           <div>
@@ -639,7 +654,7 @@ function TabInicio({ prod, cfg, tema, onIrJaulas, onIrCamadas }) {
 }
 
 // ── Tab: Jaulas ──────────────────────────────────────────────────────────────
-function TabJaulas({ prod, especieId, cfg, tema, onNacimiento }) {
+function TabJaulas({ prod, especieId, cfg, tema, onNacimiento, onFichaAnimal }) {
   const { editarEstadoJaula } = useICIVET()
   const { jaulas, camadas } = prod
 
@@ -671,6 +686,7 @@ function TabJaulas({ prod, especieId, cfg, tema, onNacimiento }) {
               tema={tema}
               onNacimiento={() => onNacimiento(j)}
               onCambiarEstado={(estado) => editarEstadoJaula(especieId, j.id, estado)}
+              onFichaAnimal={onFichaAnimal}
             />
           ))}
         </div>
@@ -680,7 +696,7 @@ function TabJaulas({ prod, especieId, cfg, tema, onNacimiento }) {
 }
 
 // ── Tab: Camadas ─────────────────────────────────────────────────────────────
-function TabCamadas({ prod, especieId, cfg, tema, onDestete, onSeleccion }) {
+function TabCamadas({ prod, especieId, cfg, tema, onDestete, onSeleccion, onFichaAnimal }) {
   const { camadas } = prod
   const activas  = camadas.filter(c => !c.destete)
   const pendSel  = camadas.filter(c => c.destete && !c.seleccion)
@@ -713,6 +729,7 @@ function TabCamadas({ prod, especieId, cfg, tema, onDestete, onSeleccion }) {
                 tema={tema}
                 onDestete={() => onDestete(c)}
                 onSeleccion={() => onSeleccion(c)}
+                onFichaAnimal={onFichaAnimal}
               />
             ))}
           </div>
@@ -841,6 +858,7 @@ export default function Produccion({ especieId }) {
   const [modalNac,       setModalNac]       = useState(null)  // jaula obj
   const [modalDestete,   setModalDestete]   = useState(null)  // camada obj
   const [modalSeleccion, setModalSeleccion] = useState(null)  // camada obj
+  const [fichaAnimalId,  setFichaAnimalId]  = useState(null)
 
   if (!datos?.produccion) {
     return <div className="p-6 text-center" style={{ color: tema.textMuted }}>Sin datos de producción.</div>
@@ -851,6 +869,7 @@ export default function Produccion({ especieId }) {
   return (
     <div className="min-h-full" style={{ background: tema.bgMain }}>
       {/* Modales */}
+      {fichaAnimalId  && <FichaAnimalICIVET animalId={fichaAnimalId} especieId={especieId} onClose={() => setFichaAnimalId(null)} />}
       {modalJaula     && <ModalCrearJaula   especieId={especieId} cfg={cfg} onClose={() => setModalJaula(false)} />}
       {modalNac       && <ModalNacimiento   jaula={modalNac}     especieId={especieId} cfg={cfg} onClose={() => setModalNac(null)} />}
       {modalDestete   && <ModalDesteeProd   camada={modalDestete}  especieId={especieId} cfg={cfg} onClose={() => setModalDestete(null)} />}
@@ -901,8 +920,8 @@ export default function Produccion({ especieId }) {
 
       {/* Contenido */}
       {tabActual === 'inicio'        && <TabInicio prod={prod} cfg={cfg} tema={tema} onIrJaulas={() => setTabActual('jaulas')} onIrCamadas={() => setTabActual('camadas')} />}
-      {tabActual === 'jaulas'        && <TabJaulas prod={prod} especieId={especieId} cfg={cfg} tema={tema} onNacimiento={setModalNac} />}
-      {tabActual === 'camadas'       && <TabCamadas prod={prod} especieId={especieId} cfg={cfg} tema={tema} onDestete={setModalDestete} onSeleccion={setModalSeleccion} />}
+      {tabActual === 'jaulas'        && <TabJaulas prod={prod} especieId={especieId} cfg={cfg} tema={tema} onNacimiento={setModalNac} onFichaAnimal={setFichaAnimalId} />}
+      {tabActual === 'camadas'       && <TabCamadas prod={prod} especieId={especieId} cfg={cfg} tema={tema} onDestete={setModalDestete} onSeleccion={setModalSeleccion} onFichaAnimal={setFichaAnimalId} />}
       {tabActual === 'seleccionados' && <TabSeleccionados prod={prod} cfg={cfg} tema={tema} />}
       {tabActual === 'stock'         && <TabStock prod={prod} cfg={cfg} tema={tema} />}
     </div>
