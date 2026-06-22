@@ -150,6 +150,9 @@ const DATOS_INICIALES = {
     { id: 'AUD-011', entidadTipo: 'animal', entidadId: 'C-NZ-M-004', fecha: '2026-06-10T16:00:00', usuario: 'Lic. Rodríguez', accion: 'crear',         campo: 'estado', valorAnterior: null,           valorNuevo: 'cuarentena'  },
     { id: 'AUD-012', entidadTipo: 'animal', entidadId: 'C-NZ-H-004', fecha: '2026-06-10T16:00:00', usuario: 'Lic. Rodríguez', accion: 'crear',         campo: 'estado', valorAnterior: null,           valorNuevo: 'cuarentena'  },
   ],
+
+  historialEventos: [],
+  actividadesGenerales: [],
 }
 
 // ── Reducer ──────────────────────────────────────────────────────────────────
@@ -245,6 +248,22 @@ function reducer(state, action) {
       }
     }
 
+    case 'REGISTRAR_EVENTO_HISTORIAL': {
+      const { evento } = action
+      return {
+        ...state,
+        historialEventos: [...(state.historialEventos ?? []), evento],
+      }
+    }
+
+    case 'REGISTRAR_ACTIVIDAD_GENERAL': {
+      const { actividad } = action
+      return {
+        ...state,
+        actividadesGenerales: [...(state.actividadesGenerales ?? []), actividad],
+      }
+    }
+
     default: return state
   }
 }
@@ -261,6 +280,8 @@ export function ConejoProvider({ children }) {
   function registrarServicio(servicio)                                      { dispatch({ type: 'REGISTRAR_SERVICIO',           servicio }) }
   function actualizarServicio(servicioId, cambios, usuario)                 { dispatch({ type: 'ACTUALIZAR_SERVICIO',          servicioId, cambios, usuario }) }
   function cambiarEstadoAnimal(animalId, nuevoEstado, usuario)              { dispatch({ type: 'CAMBIAR_ESTADO_ANIMAL',        animalId, nuevoEstado, usuario }) }
+  function registrarEventoHistorial(evento)                                 { dispatch({ type: 'REGISTRAR_EVENTO_HISTORIAL',   evento }) }
+  function registrarActividadGeneral(actividad)                             { dispatch({ type: 'REGISTRAR_ACTIVIDAD_GENERAL',  actividad }) }
 
   return (
     <ConejoContext.Provider value={{
@@ -268,6 +289,7 @@ export function ConejoProvider({ children }) {
       registrarIngreso, registrarEventoSanitario,
       tomarDecisionCuarentena, registrarServicio,
       actualizarServicio, cambiarEstadoAnimal,
+      registrarEventoHistorial, registrarActividadGeneral,
     }}>
       {children}
     </ConejoContext.Provider>

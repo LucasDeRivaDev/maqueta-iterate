@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useTheme } from '../context/ThemeContext'
 import { useICIVET, ESPECIES_CONFIG, TIPOS_MOVIMIENTO } from '../context/ICIVETContext'
+import FichaAnimalICIVET from './FichaAnimalICIVET'
+import RegistroActividades from './RegistroActividades'
 
 // ── Utilidades ────────────────────────────────────────────────────────────────
 function edadAprox(fechaNacimiento) {
@@ -742,12 +744,118 @@ function TabEntregas({ stock, cfg, tema }) {
   )
 }
 
+// ── Tab: Transferidos ─────────────────────────────────────────────────────────
+function TabTransferidosStock({ animales, historialEventos, cfg, tema, onFichaAnimal }) {
+  const transferidos = (animales ?? []).filter(a =>
+    a.destino === 'no_seleccionado' &&
+    (historialEventos ?? []).some(e => e.animalId === a.id && e.tipo === 'transferencia_colonia' && e.coloniaDestino === 'Stock')
+  )
+
+  if (transferidos.length === 0) {
+    return (
+      <div className="p-4 md:p-6">
+        <div className="text-center py-10" style={{ color: tema.textMuted }}>
+          No hay animales transferidos desde Producción en este stock.
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="p-4 md:p-6 space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h3 className="font-bold" style={{ color: tema.textPrimary }}>Animales transferidos desde Producción</h3>
+        <span className="text-xs font-mono px-2 py-0.5 rounded-full"
+          style={{ background: `${cfg.color}12`, border: `1px solid ${cfg.color}30`, color: cfg.color }}>
+          {transferidos.length} animal{transferidos.length !== 1 ? 'es' : ''}
+        </span>
+      </div>
+
+      <div className="rounded-xl px-4 py-3 text-xs"
+        style={{ background: `${cfg.color}06`, border: `1px solid ${cfg.color}20`, color: tema.textMuted }}>
+        ℹ️ Estos animales fueron transferidos individualmente desde Producción. Conservan genealogía, fecha de nacimiento e historial.
+      </div>
+
+      <div className="rounded-2xl overflow-hidden" style={{ border: `1px solid ${tema.bgCardBorde}` }}>
+        <table className="w-full">
+          <thead>
+            <tr style={{ background: 'rgba(8,13,26,0.6)' }}>
+              {['ID', 'Sexo', 'Nacimiento', 'Padre', 'Madre', 'Acciones'].map(h => (
+                <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-widest" style={{ color: tema.textMuted }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {transferidos.map((a, i) => (
+              <tr key={a.id} style={{ borderTop: i > 0 ? `1px solid ${tema.bgCardBorde}` : 'none' }}>
+                <td className="px-4 py-3">
+                  <span className="font-mono font-bold text-sm" style={{ color: cfg.color }}>{a.id}</span>
+                </td>
+                <td className="px-4 py-3 font-mono text-sm font-bold" style={{ color: a.sexo === 'macho' ? '#40c4ff' : '#ce93d8' }}>
+                  {a.sexo === 'macho' ? '♂' : '♀'} {a.sexo}
+                </td>
+                <td className="px-4 py-3 font-mono text-xs" style={{ color: tema.textMuted }}>{a.fechaNacimiento ?? '—'}</td>
+                <td className="px-4 py-3 font-mono text-xs font-semibold" style={{ color: '#40c4ff' }}>{a.padreId ? `♂ ${a.padreId}` : '—'}</td>
+                <td className="px-4 py-3 font-mono text-xs font-semibold" style={{ color: '#ce93d8' }}>{a.madreId ? `♀ ${a.madreId}` : '—'}</td>
+                <td className="px-4 py-3">
+                  <button onClick={() => onFichaAnimal?.(a.id)}
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg"
+                    style={{ background: `${cfg.color}12`, border: `1px solid ${cfg.color}35`, color: cfg.color, cursor: 'pointer' }}>
+                    Ver ficha
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+// ── Tab: Actividades ──────────────────────────────────────────────────────────
+function TabActividadesStock({ datos, especieId, cfg }) {
+  const { registrarActividadColonia } = useICIVET()
+
+  const actividadesAuto = useMemo(() => {
+    return (datos.stock?.movimientos ?? []).map(mov => {
+      const ti = TIPOS_MOVIMIENTO[mov.tipo]
+      const sexoLabel = mov.sexo === 'macho' ? '♂' : '♀'
+      let desc = `${ti?.label ?? mov.tipo}: ${sexoLabel} ${mov.cantidad} ${mov.cepa}.`
+      if (mov.investigador) desc += ` Solicitante: ${mov.investigador}.`
+      if (mov.proyecto)     desc += ` Protocolo: ${mov.proyecto}.`
+      if (mov.motivo)       desc += ` ${mov.motivo}.`
+      if (mov.observaciones) desc += ` ${mov.observaciones}.`
+      return {
+        id: `auto-stock-mov-${mov.id}`,
+        fecha: mov.fecha, hora: '--',
+        usuario: mov.investigador || 'Sistema',
+        descripcion: desc,
+        tipo: 'automatico',
+        tag: mov.tipo.startsWith('ingreso') ? 'ingreso' : mov.tipo.startsWith('baja') ? 'baja' : 'salida',
+      }
+    })
+  }, [datos.stock?.movimientos])
+
+  return (
+    <RegistroActividades
+      actividadesManuales={datos.actividadesColonia?.stock ?? []}
+      actividadesAuto={actividadesAuto}
+      accentColor={cfg.color}
+      coloniaLabel="Stock"
+      onRegistrar={act => registrarActividadColonia(especieId, 'stock', act)}
+    />
+  )
+}
+
 // ── Componente principal ──────────────────────────────────────────────────────
 const TABS_STOCK = [
-  { id: 'inicio',      label: 'Inicio' },
-  { id: 'jaulas',      label: 'Jaulas' },
-  { id: 'movimientos', label: 'Movimientos' },
-  { id: 'entregas',    label: 'Entregas' },
+  { id: 'inicio',       label: 'Inicio' },
+  { id: 'jaulas',       label: 'Jaulas' },
+  { id: 'movimientos',  label: 'Movimientos' },
+  { id: 'entregas',     label: 'Entregas' },
+  { id: 'transferidos', label: 'Transferidos' },
+  { id: 'actividades',  label: 'Actividades' },
 ]
 
 export default function StockPage({ especieId }) {
@@ -761,6 +869,7 @@ export default function StockPage({ especieId }) {
   const [modalEntrega,       setModalEntrega]        = useState(false)
   const [modalBaja,          setModalBaja]           = useState(false)
   const [modalTransferencia, setModalTransferencia]  = useState(false)
+  const [fichaAnimalId,      setFichaAnimalId]       = useState(null)
 
   if (!cfg || !datos?.stock) {
     return <div className="p-6 text-center" style={{ color: tema.textMuted }}>Sin datos de stock.</div>
@@ -771,6 +880,7 @@ export default function StockPage({ especieId }) {
   return (
     <div className="min-h-full" style={{ background: tema.bgMain }}>
       {/* Modales */}
+      {fichaAnimalId      && <FichaAnimalICIVET animalId={fichaAnimalId} especieId={especieId} onClose={() => setFichaAnimalId(null)} />}
       {modalIngreso       && <ModalIngreso       especieId={especieId} cfg={cfg} onClose={() => setModalIngreso(false)} />}
       {modalEntrega       && <ModalEntrega       especieId={especieId} cfg={cfg} stock={stock} onClose={() => setModalEntrega(false)} />}
       {modalBaja          && <ModalBaja          especieId={especieId} cfg={cfg} stock={stock} onClose={() => setModalBaja(false)} />}
@@ -836,10 +946,12 @@ export default function StockPage({ especieId }) {
       </div>
 
       {/* Contenido */}
-      {tabActual === 'inicio'      && <TabInicio      stock={stock} cfg={cfg} tema={tema} onIrJaulas={() => setTabActual('jaulas')} onIrMovimientos={() => setTabActual('movimientos')} />}
-      {tabActual === 'jaulas'      && <TabJaulas      stock={stock} cfg={cfg} tema={tema} onEntrega={() => setModalEntrega(true)} onBaja={() => setModalBaja(true)} />}
-      {tabActual === 'movimientos' && <TabMovimientos stock={stock} cfg={cfg} tema={tema} />}
-      {tabActual === 'entregas'    && <TabEntregas    stock={stock} cfg={cfg} tema={tema} />}
+      {tabActual === 'inicio'       && <TabInicio           stock={stock} cfg={cfg} tema={tema} onIrJaulas={() => setTabActual('jaulas')} onIrMovimientos={() => setTabActual('movimientos')} />}
+      {tabActual === 'jaulas'       && <TabJaulas           stock={stock} cfg={cfg} tema={tema} onEntrega={() => setModalEntrega(true)} onBaja={() => setModalBaja(true)} />}
+      {tabActual === 'movimientos'  && <TabMovimientos      stock={stock} cfg={cfg} tema={tema} />}
+      {tabActual === 'entregas'     && <TabEntregas         stock={stock} cfg={cfg} tema={tema} />}
+      {tabActual === 'transferidos' && <TabTransferidosStock animales={datos.animales} historialEventos={datos.historialEventos} cfg={cfg} tema={tema} onFichaAnimal={setFichaAnimalId} />}
+      {tabActual === 'actividades'  && <TabActividadesStock datos={datos} especieId={especieId} cfg={cfg} />}
     </div>
   )
 }

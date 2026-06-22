@@ -1,12 +1,15 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useTheme } from '../context/ThemeContext'
 import { useICIVET, ESPECIES_CONFIG } from '../context/ICIVETContext'
+import FichaAnimalICIVET from './FichaAnimalICIVET'
+import RegistroActividades from './RegistroActividades'
 
 const TABS_FUND = [
-  { id: 'parejas', label: 'Parejas' },
-  { id: 'camadas', label: 'Camadas' },
-  { id: 'seleccion', label: 'Selección' },
-  { id: 'genealogia', label: 'Genealogía' },
+  { id: 'parejas',     label: 'Parejas' },
+  { id: 'camadas',     label: 'Camadas' },
+  { id: 'seleccion',   label: 'Selección' },
+  { id: 'genealogia',  label: 'Genealogía' },
+  { id: 'actividades', label: 'Actividades' },
 ]
 
 const DESTINO_CONFIG = {
@@ -159,7 +162,7 @@ function ModalDestete({ camada, onClose, onConfirmar, tema }) {
 }
 
 // ── Tab: Parejas ─────────────────────────────────────────────────────────────
-function TabParejas({ datos, reproductores, tema }) {
+function TabParejas({ datos, reproductores, tema, onFichaAnimal }) {
   function getNombre(id) {
     const r = reproductores.find(r => r.id === id)
     return r ? r.nombre : id
@@ -201,14 +204,16 @@ function TabParejas({ datos, reproductores, tema }) {
                 }}
               >
                 <td className="px-4 py-3">
-                  <span className="font-mono font-semibold text-sm" style={{ color: tema.blue }}>
+                  <button onClick={() => onFichaAnimal(p.machoId)} className="font-mono font-semibold text-sm"
+                    style={{ color: tema.blue, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                     ♂ {getNombre(p.machoId)}
-                  </span>
+                  </button>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="font-mono font-semibold text-sm" style={{ color: tema.purple }}>
+                  <button onClick={() => onFichaAnimal(p.hembraId)} className="font-mono font-semibold text-sm"
+                    style={{ color: tema.purple, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
                     ♀ {getNombre(p.hembraId)}
-                  </span>
+                  </button>
                 </td>
                 <td className="px-4 py-3">
                   <span className="text-sm font-mono" style={{ color: tema.textSecondary }}>{p.cepa}</span>
@@ -250,8 +255,9 @@ function TabParejas({ datos, reproductores, tema }) {
         </h4>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
           {reproductores.map((r) => (
-            <div key={r.id} className="rounded-xl px-3 py-2.5 flex items-center gap-2"
-              style={{ background: tema.bgCard, border: `1px solid ${tema.bgCardBorde}` }}>
+            <button key={r.id} onClick={() => onFichaAnimal(r.id)}
+              className="rounded-xl px-3 py-2.5 flex items-center gap-2 w-full text-left"
+              style={{ background: tema.bgCard, border: `1px solid ${tema.bgCardBorde}`, cursor: 'pointer' }}>
               <span style={{ color: r.sexo === 'macho' ? tema.blue : tema.purple, fontSize: '13px' }}>
                 {r.sexo === 'macho' ? '♂' : '♀'}
               </span>
@@ -259,7 +265,7 @@ function TabParejas({ datos, reproductores, tema }) {
                 <div className="font-mono text-xs font-semibold truncate" style={{ color: tema.textPrimary }}>{r.nombre}</div>
                 <div className="text-xs" style={{ color: tema.textMuted }}>{r.generacion}</div>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -398,7 +404,7 @@ function TabCamadas({ camadas, especieId, tema }) {
 }
 
 // ── Tab: Selección de reproductores ─────────────────────────────────────────
-function TabSeleccion({ animales, camadas, especieId, tema }) {
+function TabSeleccion({ animales, camadas, especieId, tema, onFichaAnimal }) {
   const { setDestinoAnimal } = useICIVET()
 
   const animalesConCamada = animales.map((a) => ({
@@ -470,9 +476,11 @@ function TabSeleccion({ animales, camadas, especieId, tema }) {
                       <span style={{ color: animal.sexo === 'macho' ? tema.blue : tema.purple, fontSize: '14px' }}>
                         {animal.sexo === 'macho' ? '♂' : '♀'}
                       </span>
-                      <span className="font-mono text-sm font-semibold" style={{ color: tema.textPrimary }}>
+                      <button onClick={() => onFichaAnimal(animal.id)}
+                        className="font-mono text-sm font-semibold"
+                        style={{ color: tema.textPrimary, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', textDecorationColor: 'rgba(255,179,0,0.4)' }}>
                         {animal.id}
-                      </span>
+                      </button>
                     </div>
                     {animal.pesoDestete && (
                       <span className="text-xs font-mono" style={{ color: tema.textMuted }}>
@@ -512,7 +520,7 @@ function TabSeleccion({ animales, camadas, especieId, tema }) {
 }
 
 // ── Tab: Genealogía ─────────────────────────────────────────────────────────
-function TabGenealogia({ animales, camadas, reproductores, tema }) {
+function TabGenealogia({ animales, camadas, reproductores, tema, onFichaAnimal }) {
   const [vistaCamada, setVistaCamada] = useState(null)
 
   function getReproductor(id) {
@@ -595,9 +603,11 @@ function TabGenealogia({ animales, camadas, reproductores, tema }) {
                         <span style={{ color: a.sexo === 'macho' ? tema.blue : tema.purple }}>
                           {a.sexo === 'macho' ? '♂' : '♀'}
                         </span>
-                        <span className="font-mono text-xs font-semibold" style={{ color: tema.textPrimary }}>
+                        <button onClick={() => onFichaAnimal(a.id)}
+                          className="font-mono text-xs font-semibold"
+                          style={{ color: tema.textPrimary, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', textDecorationColor: 'rgba(255,179,0,0.4)' }}>
                           {a.id}
-                        </span>
+                        </button>
                         <div className="flex gap-1 text-xs font-mono" style={{ color: tema.textMuted }}>
                           <span>Padre: <span style={{ color: tema.blue }}>{a.padreId}</span></span>
                           <span>·</span>
@@ -665,6 +675,42 @@ function TabGenealogia({ animales, camadas, reproductores, tema }) {
   )
 }
 
+// ── Tab: Actividades ─────────────────────────────────────────────────────────
+function TabActividadesFund({ datos, especieId, cfg }) {
+  const { registrarActividadColonia } = useICIVET()
+
+  const actividadesAuto = useMemo(() => {
+    const evs = []
+    datos.camadas?.forEach(c => {
+      evs.push({
+        id: `auto-fund-nac-${c.id}`,
+        fecha: c.fechaNacimiento, hora: '--', usuario: 'Sistema',
+        descripcion: `Nacimiento de camada ${c.codigo} — ${c.cantidadNacida} crías. Pareja: ♂ ${c.padreId} × ♀ ${c.madreId}.`,
+        tipo: 'automatico', tag: 'nacimiento',
+      })
+      if (c.destetada && c.fechaDestete) {
+        evs.push({
+          id: `auto-fund-dest-${c.id}`,
+          fecha: c.fechaDestete, hora: '--', usuario: 'Sistema',
+          descripcion: `Destete de camada ${c.codigo} — ${c.cantidadDestetada} animales (♂ ${c.machos} · ♀ ${c.hembras}).`,
+          tipo: 'automatico', tag: 'destete',
+        })
+      }
+    })
+    return evs
+  }, [datos.camadas])
+
+  return (
+    <RegistroActividades
+      actividadesManuales={datos.actividadesColonia?.fundacion ?? []}
+      actividadesAuto={actividadesAuto}
+      accentColor={cfg.color}
+      coloniaLabel="Colonia de Fundación"
+      onRegistrar={act => registrarActividadColonia(especieId, 'fundacion', act)}
+    />
+  )
+}
+
 // ── Fundación principal ──────────────────────────────────────────────────────
 export default function Fundacion({ especieId }) {
   const { getDatosEspecie } = useICIVET()
@@ -672,6 +718,7 @@ export default function Fundacion({ especieId }) {
   const cfg = ESPECIES_CONFIG[especieId]
   const datos = getDatosEspecie(especieId)
   const [tabActual, setTabActual] = useState('parejas')
+  const [fichaAnimalId, setFichaAnimalId] = useState(null)
 
   if (!datos) {
     return (
@@ -685,6 +732,13 @@ export default function Fundacion({ especieId }) {
 
   return (
     <div className="min-h-full" style={{ background: tema.bgMain }}>
+      {fichaAnimalId && (
+        <FichaAnimalICIVET
+          animalId={fichaAnimalId}
+          especieId={especieId}
+          onClose={() => setFichaAnimalId(null)}
+        />
+      )}
       {/* Header Fundación */}
       <div className="px-4 md:px-6 pt-5 pb-0">
         <div className="flex items-center gap-3 mb-4">
@@ -744,10 +798,11 @@ export default function Fundacion({ especieId }) {
       </div>
 
       {/* Contenido del tab activo */}
-      {tabActual === 'parejas'    && <TabParejas datos={parejas} reproductores={reproductores} tema={tema} />}
+      {tabActual === 'parejas'    && <TabParejas datos={parejas} reproductores={reproductores} tema={tema} onFichaAnimal={setFichaAnimalId} />}
       {tabActual === 'camadas'    && <TabCamadas camadas={camadas} especieId={especieId} tema={tema} />}
-      {tabActual === 'seleccion'  && <TabSeleccion animales={animales} camadas={camadas} especieId={especieId} tema={tema} />}
-      {tabActual === 'genealogia' && <TabGenealogia animales={animales} camadas={camadas} reproductores={reproductores} tema={tema} />}
+      {tabActual === 'seleccion'  && <TabSeleccion animales={animales} camadas={camadas} especieId={especieId} tema={tema} onFichaAnimal={setFichaAnimalId} />}
+      {tabActual === 'genealogia'  && <TabGenealogia animales={animales} camadas={camadas} reproductores={reproductores} tema={tema} onFichaAnimal={setFichaAnimalId} />}
+      {tabActual === 'actividades' && <TabActividadesFund datos={datos} especieId={especieId} cfg={cfg} />}
     </div>
   )
 }
