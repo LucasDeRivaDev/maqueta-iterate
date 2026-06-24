@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useTheme } from '../context/ThemeContext'
-import { useICIVET, ESPECIES_CONFIG } from '../context/ICIVETContext'
+import { useICIVET, ESPECIES_CONFIG, getNombreAnimal } from '../context/ICIVETContext'
 import FichaAnimalICIVET from './FichaAnimalICIVET'
 import RegistroActividades from './RegistroActividades'
 
@@ -235,9 +235,9 @@ function TabParejas({ datos, reproductores, tema, onFichaAnimal }) {
             style={{ background: tema.bgCard, border: `1px solid ${tema.bgCardBorde}` }}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-3">
-                <span className="font-mono font-semibold text-sm" style={{ color: tema.blue }}>♂ {p.machoId}</span>
+                <span className="font-mono font-semibold text-sm" style={{ color: tema.blue }}>♂ {getNombre(p.machoId)}</span>
                 <span style={{ color: tema.textMuted }}>×</span>
-                <span className="font-mono font-semibold text-sm" style={{ color: tema.purple }}>♀ {p.hembraId}</span>
+                <span className="font-mono font-semibold text-sm" style={{ color: tema.purple }}>♀ {getNombre(p.hembraId)}</span>
               </div>
               <BadgeEstado estado={p.estado} />
             </div>
@@ -275,7 +275,9 @@ function TabParejas({ datos, reproductores, tema, onFichaAnimal }) {
 
 // ── Tab: Camadas ─────────────────────────────────────────────────────────────
 function TabCamadas({ camadas, especieId, tema }) {
-  const { registrarDestete } = useICIVET()
+  const { registrarDestete, getDatosEspecie } = useICIVET()
+  const datos = getDatosEspecie(especieId)
+  const nombre = id => getNombreAnimal(id, datos)
   const [modalCamada, setModalCamada] = useState(null)
 
   function confirmarDestete(cantidad, machos, hembras, fecha) {
@@ -351,11 +353,11 @@ function TabCamadas({ camadas, especieId, tema }) {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                 <div>
                   <div className="text-xs uppercase tracking-widest font-semibold mb-1" style={{ color: tema.textMuted }}>Padre</div>
-                  <div className="font-mono text-sm font-semibold" style={{ color: tema.blue }}>♂ {c.padreId}</div>
+                  <div className="font-mono text-sm font-semibold" style={{ color: tema.blue }}>♂ {nombre(c.padreId)}</div>
                 </div>
                 <div>
                   <div className="text-xs uppercase tracking-widest font-semibold mb-1" style={{ color: tema.textMuted }}>Madre</div>
-                  <div className="font-mono text-sm font-semibold" style={{ color: tema.purple }}>♀ {c.madreId}</div>
+                  <div className="font-mono text-sm font-semibold" style={{ color: tema.purple }}>♀ {nombre(c.madreId)}</div>
                 </div>
                 <div>
                   <div className="text-xs uppercase tracking-widest font-semibold mb-1" style={{ color: tema.textMuted }}>Nacimiento</div>
@@ -405,7 +407,9 @@ function TabCamadas({ camadas, especieId, tema }) {
 
 // ── Tab: Selección de reproductores ─────────────────────────────────────────
 function TabSeleccion({ animales, camadas, especieId, tema, onFichaAnimal }) {
-  const { setDestinoAnimal } = useICIVET()
+  const { setDestinoAnimal, getDatosEspecie } = useICIVET()
+  const datos = getDatosEspecie(especieId)
+  const nombre = id => getNombreAnimal(id, datos)
 
   const animalesConCamada = animales.map((a) => ({
     ...a,
@@ -465,7 +469,7 @@ function TabSeleccion({ animales, camadas, especieId, tema, onFichaAnimal }) {
                 style={{ background: 'rgba(8,13,26,0.4)', borderBottom: `1px solid ${tema.bgCardBorde}` }}>
                 <span className="font-mono font-bold text-sm" style={{ color: tema.accent }}>{camadaId}</span>
                 <span className="text-xs font-mono" style={{ color: tema.textMuted }}>
-                  ♂ {camada.padreId} × ♀ {camada.madreId} · Nac. {camada.fechaNacimiento}
+                  ♂ {nombre(camada.padreId)} × ♀ {nombre(camada.madreId)} · Nac. {camada.fechaNacimiento}
                 </span>
               </div>
 
@@ -479,7 +483,7 @@ function TabSeleccion({ animales, camadas, especieId, tema, onFichaAnimal }) {
                       <button onClick={() => onFichaAnimal(animal.id)}
                         className="font-mono text-sm font-semibold"
                         style={{ color: tema.textPrimary, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', textDecorationColor: 'rgba(255,179,0,0.4)' }}>
-                        {animal.id}
+                        {nombre(animal.id)}
                       </button>
                     </div>
                     {animal.pesoDestete && (
@@ -520,7 +524,8 @@ function TabSeleccion({ animales, camadas, especieId, tema, onFichaAnimal }) {
 }
 
 // ── Tab: Genealogía ─────────────────────────────────────────────────────────
-function TabGenealogia({ animales, camadas, reproductores, tema, onFichaAnimal }) {
+function TabGenealogia({ animales, camadas, reproductores, datos, tema, onFichaAnimal }) {
+  const nombre = id => getNombreAnimal(id, datos)
   const [vistaCamada, setVistaCamada] = useState(null)
 
   function getReproductor(id) {
@@ -606,12 +611,12 @@ function TabGenealogia({ animales, camadas, reproductores, tema, onFichaAnimal }
                         <button onClick={() => onFichaAnimal(a.id)}
                           className="font-mono text-xs font-semibold"
                           style={{ color: tema.textPrimary, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline', textDecorationColor: 'rgba(255,179,0,0.4)' }}>
-                          {a.id}
+                          {nombre(a.id)}
                         </button>
                         <div className="flex gap-1 text-xs font-mono" style={{ color: tema.textMuted }}>
-                          <span>Padre: <span style={{ color: tema.blue }}>{a.padreId}</span></span>
+                          <span>Padre: <span style={{ color: tema.blue }}>{nombre(a.padreId)}</span></span>
                           <span>·</span>
-                          <span>Madre: <span style={{ color: tema.purple }}>{a.madreId}</span></span>
+                          <span>Madre: <span style={{ color: tema.purple }}>{nombre(a.madreId)}</span></span>
                           <span>·</span>
                           <span>Nac. {a.fechaNacimiento}</span>
                         </div>
@@ -685,7 +690,7 @@ function TabActividadesFund({ datos, especieId, cfg }) {
       evs.push({
         id: `auto-fund-nac-${c.id}`,
         fecha: c.fechaNacimiento, hora: '--', usuario: 'Sistema',
-        descripcion: `Nacimiento de camada ${c.codigo} — ${c.cantidadNacida} crías. Pareja: ♂ ${c.padreId} × ♀ ${c.madreId}.`,
+        descripcion: `Nacimiento de camada ${c.codigo} — ${c.cantidadNacida} crías. Pareja: ♂ ${getNombreAnimal(c.padreId, datos)} × ♀ ${getNombreAnimal(c.madreId, datos)}.`,
         tipo: 'automatico', tag: 'nacimiento',
       })
       if (c.destetada && c.fechaDestete) {
@@ -801,7 +806,7 @@ export default function Fundacion({ especieId }) {
       {tabActual === 'parejas'    && <TabParejas datos={parejas} reproductores={reproductores} tema={tema} onFichaAnimal={setFichaAnimalId} />}
       {tabActual === 'camadas'    && <TabCamadas camadas={camadas} especieId={especieId} tema={tema} />}
       {tabActual === 'seleccion'  && <TabSeleccion animales={animales} camadas={camadas} especieId={especieId} tema={tema} onFichaAnimal={setFichaAnimalId} />}
-      {tabActual === 'genealogia'  && <TabGenealogia animales={animales} camadas={camadas} reproductores={reproductores} tema={tema} onFichaAnimal={setFichaAnimalId} />}
+      {tabActual === 'genealogia'  && <TabGenealogia animales={animales} camadas={camadas} reproductores={reproductores} datos={datos} tema={tema} onFichaAnimal={setFichaAnimalId} />}
       {tabActual === 'actividades' && <TabActividadesFund datos={datos} especieId={especieId} cfg={cfg} />}
     </div>
   )

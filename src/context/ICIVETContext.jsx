@@ -506,10 +506,10 @@ const DATOS_INICIALES = {
       { id: 'P-C-002', machoId: 'M-C-002', hembraId: 'H-C-002', fechaApareamiento: '2026-06-03', estado: 'activo', cepa: 'C57BL/6' },
     ],
     reproductores: [
-      { id: 'M-C-001', sexo: 'macho',  nombre: 'M-C-001', origen: 'Fundación', generacion: 'G7' },
-      { id: 'M-C-002', sexo: 'macho',  nombre: 'M-C-002', origen: 'Fundación', generacion: 'G7' },
-      { id: 'H-C-001', sexo: 'hembra', nombre: 'H-C-001', origen: 'Fundación', generacion: 'G7' },
-      { id: 'H-C-002', sexo: 'hembra', nombre: 'H-C-002', origen: 'Fundación', generacion: 'G8' },
+      { id: 'M-C-001', sexo: 'macho',  nombre: 'Macho 1',   origen: 'Fundación', generacion: 'G7' },
+      { id: 'M-C-002', sexo: 'macho',  nombre: 'Macho 2',   origen: 'Fundación', generacion: 'G7' },
+      { id: 'H-C-001', sexo: 'hembra', nombre: 'Hembra 1',  origen: 'Fundación', generacion: 'G7' },
+      { id: 'H-C-002', sexo: 'hembra', nombre: 'Hembra 2',  origen: 'Fundación', generacion: 'G8' },
     ],
     camadas: [
       { id: 'CAM-C-001', codigo: 'CAM-C-001', padreId: 'M-C-001', madreId: 'H-C-001', pareja: 'P-C-001', fechaNacimiento: '2026-05-10', cantidadNacida: 6, destetada: true, fechaDestete: '2026-05-31', cantidadDestetada: 6, machos: 3, hembras: 3, observaciones: 'Camada uniforme, buen desarrollo.', cepa: 'C57BL/6' },
@@ -574,6 +574,75 @@ const DATOS_INICIALES = {
       ],
     },
   },
+}
+
+// ── Nomenclatura operativa ───────────────────────────────────────────────────
+function _abrevReproductor(nombre) {
+  if (!nombre) return '?'
+  const m = nombre.match(/^Macho\s+(\d+)$/)
+  if (m) return `M${m[1]}`
+  const h = nombre.match(/^Hembra\s+(\d+)$/)
+  if (h) return `H${h[1]}`
+  return nombre.replace(/[^A-Z0-9]/gi, '').slice(0, 5).toUpperCase() || '?'
+}
+
+function _coloniaPrefix(animal, datos) {
+  const enJaulaProd = datos.produccion?.jaulas?.find(
+    j => j.machoId === animal.id || j.hembraIds?.includes(animal.id)
+  )
+  if (enJaulaProd) return 'P'
+  const trans = (datos.historialEventos ?? [])
+    .filter(e => e.animalId === animal.id && e.tipo === 'transferencia_colonia' && e.coloniaDestino)
+    .sort((a, b) => b.fecha.localeCompare(a.fecha))
+  if (trans.length > 0) {
+    const d = trans[0].coloniaDestino
+    if (d === 'Producción') return 'P'
+    if (d === 'Stock') return 'S'
+    return 'F'
+  }
+  switch (animal.destino) {
+    case 'produccion':      return 'P'
+    case 'no_seleccionado': return 'S'
+    case 'fundacion':       return 'F'
+    default: {
+      const enProd = datos.produccion?.camadas?.find(c => c.id === animal.camadaId)
+      return enProd ? 'P' : 'F'
+    }
+  }
+}
+
+function _abrevParent(id, datos) {
+  if (!id) return '?'
+  const r = datos.reproductores?.find(r => r.id === id)
+  if (r) return _abrevReproductor(r.nombre)
+  const a = datos.animales?.find(a => a.id === id)
+  if (a) {
+    const n = _nombreOperativo(a, datos)
+    if (n) return n.split('-').slice(1).join('')
+  }
+  return id.slice(-4)
+}
+
+function _nombreOperativo(animal, datos) {
+  if (!animal?.padreId || !animal?.madreId) return null
+  const p = _abrevParent(animal.padreId, datos)
+  const m = _abrevParent(animal.madreId, datos)
+  const colonia = _coloniaPrefix(animal, datos)
+  const hermanos = (datos.animales ?? [])
+    .filter(a => a.camadaId === animal.camadaId && a.sexo === animal.sexo)
+    .sort((a, b) => a.id.localeCompare(b.id))
+  const n = hermanos.findIndex(a => a.id === animal.id) + 1
+  if (n === 0) return null
+  return `${colonia}-${p}${m}-${animal.sexo === 'macho' ? 'M' : 'H'}${n}`
+}
+
+export function getNombreAnimal(id, datos) {
+  if (!id || !datos) return id ?? '—'
+  const r = datos.reproductores?.find(r => r.id === id)
+  if (r) return r.nombre
+  const a = datos.animales?.find(a => a.id === id)
+  if (a) return _nombreOperativo(a, datos) ?? id
+  return id
 }
 
 // ── Reducer ──────────────────────────────────────────────────────────────────

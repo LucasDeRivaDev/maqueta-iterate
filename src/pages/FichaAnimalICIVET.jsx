@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTheme } from '../context/ThemeContext'
-import { useICIVET, ESPECIES_CONFIG } from '../context/ICIVETContext'
+import { useICIVET, ESPECIES_CONFIG, getNombreAnimal } from '../context/ICIVETContext'
 
 // ── Configuración de colonias ────────────────────────────────────────────────
 const COLONIAS = {
@@ -274,7 +274,7 @@ function AnimalCard({ animalId, rol, datos, onNavegar }) {
       }}
     >
       {rol && <div style={{ color: tema.textMuted, fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px' }}>{rol}</div>}
-      <div className="font-mono font-bold text-xs" style={{ color: clickable ? '#40c4ff' : tema.textPrimary }}>{animal.id}</div>
+      <div className="font-mono font-bold text-xs" style={{ color: clickable ? '#40c4ff' : tema.textPrimary }}>{getNombreAnimal(animal.id, datos)}</div>
       <div className="text-xs mt-0.5" style={{ color: sexColor }}>
         {animal.sexo === 'macho' ? '♂' : '♀'} {animal.sexo}
       </div>
@@ -305,7 +305,7 @@ function TabDatos({ animal, datos, cfg }) {
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-4">
         <Fila label="Identificador" value={
-          <span className="font-mono font-bold text-base" style={{ color: cfg.color }}>{animal.id}</span>
+          <span className="font-mono font-bold text-base" style={{ color: cfg.color }}>{getNombreAnimal(animal.id, datos)}</span>
         } />
         <Fila label="Estado / Destino" value={
           estadoDisplay
@@ -331,10 +331,12 @@ function TabDatos({ animal, datos, cfg }) {
           <div className="grid grid-cols-2 gap-3">
             <Fila label="Código" value={<span className="font-mono font-bold" style={{ color: cfg.color }}>{camada.codigo || camada.id}</span>} />
             <Fila label="Fecha nacimiento" value={fmt(camada.fechaNacimiento)} />
-            <Fila label="Padre" value={<span className="font-mono font-semibold" style={{ color: '#40c4ff' }}>♂ {camada.padreId ?? camada.machoId ?? '—'}</span>} />
+            <Fila label="Padre" value={<span className="font-mono font-semibold" style={{ color: '#40c4ff' }}>♂ {getNombreAnimal(camada.padreId ?? camada.machoId, datos) ?? '—'}</span>} />
             <Fila label="Madre(s)" value={
               <span className="font-mono font-semibold" style={{ color: '#ce93d8' }}>
-                ♀ {camada.madreId ?? camada.hembraIds?.join(', ') ?? '—'}
+                ♀ {camada.madreId
+                  ? getNombreAnimal(camada.madreId, datos)
+                  : camada.hembraIds?.map(h => getNombreAnimal(h, datos)).join(', ') ?? '—'}
               </span>
             } />
           </div>
@@ -346,10 +348,10 @@ function TabDatos({ animal, datos, cfg }) {
           <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: tema.textMuted }}>Filiación directa</div>
           <div className="grid grid-cols-2 gap-2">
             {animal.padreId
-              ? <div className="text-sm font-mono font-semibold" style={{ color: '#40c4ff' }}>♂ Padre: {animal.padreId}</div>
+              ? <div className="text-sm font-mono font-semibold" style={{ color: '#40c4ff' }}>♂ Padre: {getNombreAnimal(animal.padreId, datos)}</div>
               : <div className="text-sm" style={{ color: tema.textMuted }}>Padre no registrado</div>}
             {animal.madreId
-              ? <div className="text-sm font-mono font-semibold" style={{ color: '#ce93d8' }}>♀ Madre: {animal.madreId}</div>
+              ? <div className="text-sm font-mono font-semibold" style={{ color: '#ce93d8' }}>♀ Madre: {getNombreAnimal(animal.madreId, datos)}</div>
               : <div className="text-sm" style={{ color: tema.textMuted }}>Madre no registrada</div>}
           </div>
         </div>
@@ -400,7 +402,7 @@ function TabGenealogiaICIVET({ animal, datos, cfg, onNavegar }) {
           <div>
             <div className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: cfg.color }}>Animal actual</div>
             <div className="rounded-xl p-4" style={{ background: `${cfg.color}08`, border: `1.5px solid ${cfg.color}40` }}>
-              <div className="font-mono font-bold text-base" style={{ color: cfg.color }}>{animal.id}</div>
+              <div className="font-mono font-bold text-base" style={{ color: cfg.color }}>{getNombreAnimal(animal.id, datos)}</div>
               <div className="text-sm mt-0.5" style={{ color: animal.sexo === 'macho' ? '#40c4ff' : '#ce93d8' }}>
                 {animal.sexo === 'macho' ? '♂ Macho' : '♀ Hembra'}
                 {animal.fechaNacimiento ? ` · Nac. ${fmt(animal.fechaNacimiento)}` : ''}
@@ -422,7 +424,7 @@ function TabGenealogiaICIVET({ animal, datos, cfg, onNavegar }) {
                     className="w-full flex items-center gap-3 rounded-xl px-4 py-2.5 text-left transition-all"
                     style={{ background: tema.bgCard, border: `1px solid ${tema.bgCardBorde}`, cursor: 'pointer' }}>
                     <span style={{ color: d.sexo === 'macho' ? '#40c4ff' : '#ce93d8' }}>{d.sexo === 'macho' ? '♂' : '♀'}</span>
-                    <span className="font-mono font-bold text-sm" style={{ color: tema.textPrimary }}>{d.id}</span>
+                    <span className="font-mono font-bold text-sm" style={{ color: tema.textPrimary }}>{getNombreAnimal(d.id, datos)}</span>
                     <span className="text-xs" style={{ color: tema.textMuted }}>
                       Nac. {fmt(d.fechaNacimiento)}
                       {d.destino ? ` · ${({ fundacion: 'Fundación', produccion: 'Producción', no_seleccionado: 'Stock' }[d.destino] ?? d.destino)}` : ''}
@@ -522,7 +524,7 @@ function TabMovimientos({ animal, datos, cfg }) {
 }
 
 // ── Tab: Registrar Evento ────────────────────────────────────────────────────
-function TabRegistrarEvento({ animal, especieId, cfg, onEventoRegistrado }) {
+function TabRegistrarEvento({ animal, especieId, cfg, datos, onEventoRegistrado }) {
   const { registrarEventoAnimal } = useICIVET()
   const { tema } = useTheme()
   const [tipo,         setTipo]         = useState('observacion')
@@ -557,7 +559,7 @@ function TabRegistrarEvento({ animal, especieId, cfg, onEventoRegistrado }) {
   return (
     <div className="space-y-4">
       <div className="rounded-xl px-4 py-3 text-xs" style={{ background: `${cfg.color}06`, border: `1px solid ${cfg.color}20`, color: tema.textMuted }}>
-        Registrando evento para <span className="font-mono font-bold" style={{ color: cfg.color }}>{animal.id}</span>
+        Registrando evento para <span className="font-mono font-bold" style={{ color: cfg.color }}>{getNombreAnimal(animal.id, datos)}</span>
       </div>
 
       <div>
@@ -609,7 +611,7 @@ function TabRegistrarEvento({ animal, especieId, cfg, onEventoRegistrado }) {
 }
 
 // ── Modal: Transferir animal ─────────────────────────────────────────────────
-function ModalTransferirAnimal({ animal, especieId, cfg, onClose, onTransferido }) {
+function ModalTransferirAnimal({ animal, especieId, cfg, datos, onClose, onTransferido }) {
   const { transferirAnimal } = useICIVET()
   const { tema } = useTheme()
   const [destino,      setDestino]      = useState('')
@@ -656,7 +658,7 @@ function ModalTransferirAnimal({ animal, especieId, cfg, onClose, onTransferido 
 
         <div className="px-6 py-4" style={{ borderBottom: '1px solid rgba(138,155,176,0.2)', background: 'rgba(138,155,176,0.04)' }}>
           <div className="font-bold text-base" style={{ color: '#c9d4e0' }}>Transferir animal</div>
-          <div className="text-xs font-mono mt-0.5" style={{ color: '#4a5f7a' }}>{animal.id}</div>
+          <div className="text-xs font-mono mt-0.5" style={{ color: '#4a5f7a' }}>{getNombreAnimal(animal.id, datos)}</div>
         </div>
 
         <div className="px-6 py-5 space-y-4">
@@ -723,7 +725,7 @@ function ModalTransferirAnimal({ animal, especieId, cfg, onClose, onTransferido 
               {/* Aviso */}
               {valido && (
                 <div className="rounded-xl px-4 py-3 text-xs" style={{ background: 'rgba(138,155,176,0.06)', border: '1px solid rgba(138,155,176,0.2)', color: '#8a9bb0' }}>
-                  El animal <span className="font-mono font-bold" style={{ color: cfg.color }}>{animal.id}</span> se moverá de{' '}
+                  El animal <span className="font-mono font-bold" style={{ color: cfg.color }}>{getNombreAnimal(animal.id, datos)}</span> se moverá de{' '}
                   <strong>{coloniaActual}</strong> a <strong>{destinoSel?.label}</strong>. Se conservará toda su información, genealogía e historial.
                 </div>
               )}
@@ -824,6 +826,7 @@ export default function FichaAnimalICIVET({ animalId, especieId, onClose }) {
           animal={animal}
           especieId={especieId}
           cfg={cfg}
+          datos={datos}
           onClose={() => setModalTransferir(false)}
           onTransferido={() => setTabActivo('movimientos')}
         />
@@ -847,7 +850,7 @@ export default function FichaAnimalICIVET({ animalId, especieId, onClose }) {
                   {i > 0 && <span style={{ color: tema.textMuted }}> / </span>}
                   <span className="font-mono"
                     style={{ color: i === navStack.length - 1 ? cfg.color : tema.textMuted, fontWeight: i === navStack.length - 1 ? 700 : 400 }}>
-                    {id}
+                    {getNombreAnimal(id, datos)}
                   </span>
                 </span>
               ))}
@@ -859,7 +862,7 @@ export default function FichaAnimalICIVET({ animalId, especieId, onClose }) {
         <div className="px-6 py-4 flex items-center gap-3 shrink-0"
           style={{ borderBottom: `1px solid ${cfg.color}20`, background: `${cfg.color}04` }}>
           <div className="flex-1 min-w-0">
-            <div className="font-mono font-bold text-lg" style={{ color: cfg.color }}>{animal.id}</div>
+            <div className="font-mono font-bold text-lg" style={{ color: cfg.color }}>{getNombreAnimal(animal.id, datos)}</div>
             <div className="text-xs mt-0.5 flex flex-wrap gap-1" style={{ color: tema.textMuted }}>
               <span style={{ color: sexColor }}>{animal.sexo === 'macho' ? '♂ Macho' : '♀ Hembra'}</span>
               {animal.fechaNacimiento && <>
@@ -900,7 +903,7 @@ export default function FichaAnimalICIVET({ animalId, especieId, onClose }) {
           {tabActivo === 'genealogia'  && <TabGenealogiaICIVET animal={animal} datos={datos} cfg={cfg} onNavegar={navegarA} />}
           {tabActivo === 'historial'   && <TabHistorial animal={animal} datos={datos} />}
           {tabActivo === 'movimientos' && <TabMovimientos animal={animal} datos={datos} cfg={cfg} />}
-          {tabActivo === 'evento'      && <TabRegistrarEvento animal={animal} especieId={especieId} cfg={cfg} onEventoRegistrado={() => setTabActivo('historial')} />}
+          {tabActivo === 'evento'      && <TabRegistrarEvento animal={animal} especieId={especieId} cfg={cfg} datos={datos} onEventoRegistrado={() => setTabActivo('historial')} />}
         </div>
       </div>
     </div>

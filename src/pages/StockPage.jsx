@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useTheme } from '../context/ThemeContext'
-import { useICIVET, ESPECIES_CONFIG, TIPOS_MOVIMIENTO } from '../context/ICIVETContext'
+import { useICIVET, ESPECIES_CONFIG, TIPOS_MOVIMIENTO, getNombreAnimal } from '../context/ICIVETContext'
 import FichaAnimalICIVET from './FichaAnimalICIVET'
 import RegistroActividades from './RegistroActividades'
 
@@ -745,7 +745,8 @@ function TabEntregas({ stock, cfg, tema }) {
 }
 
 // ── Tab: Transferidos ─────────────────────────────────────────────────────────
-function TabTransferidosStock({ animales, historialEventos, cfg, tema, onFichaAnimal }) {
+function TabTransferidosStock({ animales, historialEventos, cfg, tema, datos, onFichaAnimal }) {
+  const nombre = id => getNombreAnimal(id, datos)
   const transferidos = (animales ?? []).filter(a =>
     a.destino === 'no_seleccionado' &&
     (historialEventos ?? []).some(e => e.animalId === a.id && e.tipo === 'transferencia_colonia' && e.coloniaDestino === 'Stock')
@@ -789,14 +790,14 @@ function TabTransferidosStock({ animales, historialEventos, cfg, tema, onFichaAn
             {transferidos.map((a, i) => (
               <tr key={a.id} style={{ borderTop: i > 0 ? `1px solid ${tema.bgCardBorde}` : 'none' }}>
                 <td className="px-4 py-3">
-                  <span className="font-mono font-bold text-sm" style={{ color: cfg.color }}>{a.id}</span>
+                  <span className="font-mono font-bold text-sm" style={{ color: cfg.color }}>{nombre(a.id)}</span>
                 </td>
                 <td className="px-4 py-3 font-mono text-sm font-bold" style={{ color: a.sexo === 'macho' ? '#40c4ff' : '#ce93d8' }}>
                   {a.sexo === 'macho' ? '♂' : '♀'} {a.sexo}
                 </td>
                 <td className="px-4 py-3 font-mono text-xs" style={{ color: tema.textMuted }}>{a.fechaNacimiento ?? '—'}</td>
-                <td className="px-4 py-3 font-mono text-xs font-semibold" style={{ color: '#40c4ff' }}>{a.padreId ? `♂ ${a.padreId}` : '—'}</td>
-                <td className="px-4 py-3 font-mono text-xs font-semibold" style={{ color: '#ce93d8' }}>{a.madreId ? `♀ ${a.madreId}` : '—'}</td>
+                <td className="px-4 py-3 font-mono text-xs font-semibold" style={{ color: '#40c4ff' }}>{a.padreId ? `♂ ${nombre(a.padreId)}` : '—'}</td>
+                <td className="px-4 py-3 font-mono text-xs font-semibold" style={{ color: '#ce93d8' }}>{a.madreId ? `♀ ${nombre(a.madreId)}` : '—'}</td>
                 <td className="px-4 py-3">
                   <button onClick={() => onFichaAnimal?.(a.id)}
                     className="text-xs font-bold px-3 py-1.5 rounded-lg"
@@ -950,7 +951,7 @@ export default function StockPage({ especieId }) {
       {tabActual === 'jaulas'       && <TabJaulas           stock={stock} cfg={cfg} tema={tema} onEntrega={() => setModalEntrega(true)} onBaja={() => setModalBaja(true)} />}
       {tabActual === 'movimientos'  && <TabMovimientos      stock={stock} cfg={cfg} tema={tema} />}
       {tabActual === 'entregas'     && <TabEntregas         stock={stock} cfg={cfg} tema={tema} />}
-      {tabActual === 'transferidos' && <TabTransferidosStock animales={datos.animales} historialEventos={datos.historialEventos} cfg={cfg} tema={tema} onFichaAnimal={setFichaAnimalId} />}
+      {tabActual === 'transferidos' && <TabTransferidosStock animales={datos.animales} historialEventos={datos.historialEventos} cfg={cfg} tema={tema} datos={datos} onFichaAnimal={setFichaAnimalId} />}
       {tabActual === 'actividades'  && <TabActividadesStock datos={datos} especieId={especieId} cfg={cfg} />}
     </div>
   )
