@@ -3,6 +3,7 @@ import { useTheme } from '../context/ThemeContext'
 import { useICIVET, ESPECIES_CONFIG, TIPOS_MOVIMIENTO, getNombreAnimal } from '../context/ICIVETContext'
 import FichaAnimalICIVET from './FichaAnimalICIVET'
 import RegistroActividades from './RegistroActividades'
+import VistaRacks from './VistaRacks'
 
 // ── Utilidades ────────────────────────────────────────────────────────────────
 function edadAprox(fechaNacimiento) {
@@ -851,6 +852,7 @@ function TabActividadesStock({ datos, especieId, cfg }) {
 
 // ── Componente principal ──────────────────────────────────────────────────────
 const TABS_STOCK = [
+  { id: 'racks',        label: 'Racks' },
   { id: 'inicio',       label: 'Inicio' },
   { id: 'jaulas',       label: 'Jaulas' },
   { id: 'movimientos',  label: 'Movimientos' },
@@ -865,7 +867,7 @@ export default function StockPage({ especieId }) {
   const cfg   = ESPECIES_CONFIG[especieId]
   const datos = getDatosEspecie(especieId)
 
-  const [tabActual,          setTabActual]          = useState('inicio')
+  const [tabActual,          setTabActual]          = useState('racks')
   const [modalIngreso,       setModalIngreso]        = useState(false)
   const [modalEntrega,       setModalEntrega]        = useState(false)
   const [modalBaja,          setModalBaja]           = useState(false)
@@ -947,6 +949,7 @@ export default function StockPage({ especieId }) {
       </div>
 
       {/* Contenido */}
+      {tabActual === 'racks'        && <VistaRacks          sector="stock" datos={datos} cfg={cfg} tema={tema} onFichaAnimal={setFichaAnimalId} />}
       {tabActual === 'inicio'       && <TabInicio           stock={stock} cfg={cfg} tema={tema} onIrJaulas={() => setTabActual('jaulas')} onIrMovimientos={() => setTabActual('movimientos')} />}
       {tabActual === 'jaulas'       && <TabJaulas           stock={stock} cfg={cfg} tema={tema} onEntrega={() => setModalEntrega(true)} onBaja={() => setModalBaja(true)} />}
       {tabActual === 'movimientos'  && <TabMovimientos      stock={stock} cfg={cfg} tema={tema} />}

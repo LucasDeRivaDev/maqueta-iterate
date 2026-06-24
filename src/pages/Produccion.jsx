@@ -3,6 +3,7 @@ import { useTheme } from '../context/ThemeContext'
 import { useICIVET, ESPECIES_CONFIG, GESTACION_DIAS, DESTETE_DIAS, getNombreAnimal } from '../context/ICIVETContext'
 import FichaAnimalICIVET from './FichaAnimalICIVET'
 import RegistroActividades from './RegistroActividades'
+import VistaRacks from './VistaRacks'
 
 // ── Utilidades de fechas ─────────────────────────────────────────────────────
 function addDias(dateStr, days) {
@@ -969,6 +970,7 @@ function TabActividadesProd({ datos, especieId, cfg }) {
 
 // ── Producción principal ─────────────────────────────────────────────────────
 const TABS_PROD = [
+  { id: 'racks',         label: 'Racks' },
   { id: 'inicio',        label: 'Inicio' },
   { id: 'jaulas',        label: 'Jaulas' },
   { id: 'camadas',       label: 'Camadas' },
@@ -983,7 +985,7 @@ export default function Produccion({ especieId }) {
   const { tema } = useTheme()
   const cfg    = ESPECIES_CONFIG[especieId]
   const datos  = getDatosEspecie(especieId)
-  const [tabActual, setTabActual] = useState('inicio')
+  const [tabActual, setTabActual] = useState('racks')
 
   // Modales
   const [modalJaula,     setModalJaula]     = useState(false)
@@ -1051,6 +1053,7 @@ export default function Produccion({ especieId }) {
       </div>
 
       {/* Contenido */}
+      {tabActual === 'racks'         && <VistaRacks sector="produccion" datos={datos} cfg={cfg} tema={tema} onFichaAnimal={setFichaAnimalId} />}
       {tabActual === 'inicio'        && <TabInicio prod={prod} cfg={cfg} tema={tema} datos={datos} onIrJaulas={() => setTabActual('jaulas')} onIrCamadas={() => setTabActual('camadas')} />}
       {tabActual === 'jaulas'        && <TabJaulas prod={prod} especieId={especieId} cfg={cfg} tema={tema} onNacimiento={setModalNac} onFichaAnimal={setFichaAnimalId} />}
       {tabActual === 'camadas'       && <TabCamadas prod={prod} especieId={especieId} cfg={cfg} tema={tema} onDestete={setModalDestete} onSeleccion={setModalSeleccion} onFichaAnimal={setFichaAnimalId} />}

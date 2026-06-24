@@ -3,8 +3,10 @@ import { useTheme } from '../context/ThemeContext'
 import { useICIVET, ESPECIES_CONFIG, getNombreAnimal } from '../context/ICIVETContext'
 import FichaAnimalICIVET from './FichaAnimalICIVET'
 import RegistroActividades from './RegistroActividades'
+import VistaRacks from './VistaRacks'
 
 const TABS_FUND = [
+  { id: 'racks',       label: 'Racks' },
   { id: 'parejas',     label: 'Parejas' },
   { id: 'camadas',     label: 'Camadas' },
   { id: 'seleccion',   label: 'Selección' },
@@ -722,7 +724,7 @@ export default function Fundacion({ especieId }) {
   const { tema } = useTheme()
   const cfg = ESPECIES_CONFIG[especieId]
   const datos = getDatosEspecie(especieId)
-  const [tabActual, setTabActual] = useState('parejas')
+  const [tabActual, setTabActual] = useState('racks')
   const [fichaAnimalId, setFichaAnimalId] = useState(null)
 
   if (!datos) {
@@ -803,6 +805,7 @@ export default function Fundacion({ especieId }) {
       </div>
 
       {/* Contenido del tab activo */}
+      {tabActual === 'racks'      && <VistaRacks sector="fundacion" datos={datos} cfg={cfg} tema={tema} onFichaAnimal={setFichaAnimalId} />}
       {tabActual === 'parejas'    && <TabParejas datos={parejas} reproductores={reproductores} tema={tema} onFichaAnimal={setFichaAnimalId} />}
       {tabActual === 'camadas'    && <TabCamadas camadas={camadas} especieId={especieId} tema={tema} />}
       {tabActual === 'seleccion'  && <TabSeleccion animales={animales} camadas={camadas} especieId={especieId} tema={tema} onFichaAnimal={setFichaAnimalId} />}
