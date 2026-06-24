@@ -85,10 +85,27 @@ function NivelRacks({ racks, sector, cfg, tema, onAbrirRack }) {
   )
 }
 
+// ── Botón de volver ───────────────────────────────────────────────────────────
+function BotonVolver({ label, onClick, cfg }) {
+  return (
+    <button onClick={onClick}
+      className="flex items-center gap-1.5 mb-3"
+      style={{
+        padding: '6px 12px', borderRadius: '10px', cursor: 'pointer',
+        fontSize: '13px', fontWeight: 600,
+        background: cfg.colorDim, border: `1px solid ${cfg.colorBorde}`, color: cfg.color,
+      }}>
+      <span style={{ fontSize: '15px', lineHeight: 1 }}>←</span>
+      <span>{label}</span>
+    </button>
+  )
+}
+
 // ── Nivel 2: Jaulas dentro de un rack ─────────────────────────────────────────
-function NivelJaulas({ rack, cfg, tema, onAbrirJaula }) {
+function NivelJaulas({ rack, sector, cfg, tema, onAbrirJaula, onVolver }) {
   return (
     <div className="space-y-3">
+      <BotonVolver label={`Volver a ${SECTOR_LABEL[sector]}`} onClick={onVolver} cfg={cfg} />
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="font-bold text-base" style={{ color: tema.textPrimary }}>
           {rack.nombre} · Jaulas
@@ -139,12 +156,13 @@ function NivelJaulas({ rack, cfg, tema, onAbrirJaula }) {
 }
 
 // ── Nivel 3: Animales dentro de una jaula ─────────────────────────────────────
-function NivelAnimales({ jaula, cfg, tema, onFichaAnimal }) {
+function NivelAnimales({ jaula, rack, cfg, tema, onFichaAnimal, onVolver }) {
   const sexColor = sexo => (sexo === 'macho' ? '#40c4ff' : sexo === 'hembra' ? '#ce93d8' : '#8a9bb0')
   const sexSimbolo = sexo => (sexo === 'macho' ? '♂' : sexo === 'hembra' ? '♀' : '•')
 
   return (
     <div className="space-y-3">
+      <BotonVolver label={`Volver a ${rack.nombre}`} onClick={onVolver} cfg={cfg} />
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h3 className="font-bold text-base" style={{ color: tema.textPrimary }}>
@@ -223,10 +241,12 @@ export default function VistaRacks({ sector, datos, cfg, tema, onFichaAnimal }) 
         <NivelRacks racks={racks} sector={sector} cfg={cfg} tema={tema} onAbrirRack={setRackId} />
       )}
       {rack && !jaula && (
-        <NivelJaulas rack={rack} cfg={cfg} tema={tema} onAbrirJaula={setJaulaId} />
+        <NivelJaulas rack={rack} sector={sector} cfg={cfg} tema={tema}
+          onAbrirJaula={setJaulaId} onVolver={() => setRackId(null)} />
       )}
       {jaula && (
-        <NivelAnimales jaula={jaula} cfg={cfg} tema={tema} onFichaAnimal={onFichaAnimal} />
+        <NivelAnimales jaula={jaula} rack={rack} cfg={cfg} tema={tema}
+          onFichaAnimal={onFichaAnimal} onVolver={() => setJaulaId(null)} />
       )}
     </div>
   )
